@@ -1,6 +1,5 @@
 @import '@fontsource-variable/inter';
-@import '@fontsource/instrument-serif/400.css';
-@import '@fontsource/instrument-serif/400-italic.css';
+@import '@fontsource-variable/geist';
 
 @tailwind base;
 @tailwind components;
@@ -53,11 +52,16 @@ textarea {
 .animate-sheet { animation: sheet 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .animate-rise { animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 
-/* Números de destaque: Inter fina (o "1" da serifada parece um "l"). */
-.figure {
-  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
-  font-weight: 300;
+/* Títulos e números de destaque em Geist, encorpados e com espaçamento justo. */
+.font-serif {
+  font-weight: 600;
   letter-spacing: -0.035em;
+}
+
+.figure {
+  font-family: 'Geist Variable', 'Inter Variable', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum', 'cv11', 'ss01';
 }

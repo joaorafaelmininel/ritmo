@@ -253,7 +253,7 @@ export default function FazerTreinoPage({ params }: { params: { id: string } }) 
         <div className="sticky top-0 z-20 -mx-5 mb-5 border-b border-line bg-paper/95 px-5 pb-4 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur">
           <div className="flex items-end justify-between">
             <div className="min-w-0">
-              <p className="truncate text-2xs font-medium uppercase tracking-label text-muted">{plan.name}</p>
+              <p className="truncate text-[13px] font-medium text-muted">{plan.name}</p>
               <p className="figure mt-1 text-[44px] leading-none">{clock(elapsed)}</p>
             </div>
             <div className="text-right">
@@ -410,7 +410,7 @@ export default function FazerTreinoPage({ params }: { params: { id: string } }) 
       <span className={cx('flex h-14 w-14 items-center justify-center rounded-full text-white', completion === 'nao' ? 'bg-ink' : 'bg-good')}>
         <Check size={26} strokeWidth={2.25} />
       </span>
-      <h1 className="mt-6 font-serif text-[44px] leading-[1.02]">{completion === 'nao' ? 'Registrado. Amanhã tem mais.' : 'Treino concluído.'}</h1>
+      <h1 className="mt-6 font-serif text-[36px] leading-[1.08]">{completion === 'nao' ? 'Registrado. Amanhã tem mais.' : 'Treino concluído.'}</h1>
       <dl className="mt-8 grid grid-cols-3 divide-x divide-line border-y border-line py-4">
         <Metric className="px-3 first:pl-0" label="Exercícios" value={`${doneCount}/${exercises.length}`} />
         <Metric className="px-3" label="Duração" value={`${minutes}′`} />

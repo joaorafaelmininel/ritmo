@@ -71,10 +71,10 @@ export default function HojePage() {
   return (
     <>
       <header className="pb-7 pt-3">
-        <p className="text-2xs font-medium uppercase tracking-label text-muted first-letter:uppercase">{longToday()}</p>
-        <h1 className="mt-2 font-serif text-[44px] leading-[1.02] tracking-[-0.01em]">
+        <p className="text-[13px] font-medium text-muted first-letter:uppercase">{longToday()}</p>
+        <h1 className="mt-2 font-serif text-[36px] leading-[1.08]">
           {greeting()},<br />
-          <span className="italic">{me.display_name}.</span>
+          <span className="text-muted">{me.display_name}</span>
         </h1>
         {partner && <p className="mt-2 text-sm text-muted">Em casa com {partner.display_name}</p>}
       </header>
@@ -90,7 +90,7 @@ export default function HojePage() {
           <Link
             key={label}
             href={href}
-            className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-line bg-surface px-4 text-[13px] font-medium text-ink-soft transition hover:border-faint active:scale-95"
+            className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-surface px-4 text-[13px] font-semibold text-ink shadow-card transition active:scale-95"
           >
             <Icon size={16} strokeWidth={1.75} />
             {label}
@@ -120,12 +120,12 @@ export default function HojePage() {
             <div className="space-y-2">
               {todayPlans.map((p) => (
                 <Link key={p.id} href={`/treinos/fazer/${p.id}`} className="group block">
-                  <div className="flex items-center gap-4 rounded-2xl bg-ink p-5 text-paper transition active:scale-[0.99]">
+                  <div className="flex items-center gap-4 rounded-2xl bg-accent p-5 text-white shadow-lift transition active:scale-[0.99]">
                     <div className="min-w-0 flex-1">
-                      <p className="text-2xs font-medium uppercase tracking-label text-paper/60">Programado para hoje</p>
-                      <p className="mt-1 truncate font-serif text-[28px] leading-tight">{p.name}</p>
+                      <p className="text-[13px] font-medium text-white/70">Programado para hoje</p>
+                      <p className="mt-1 truncate font-serif text-[24px] leading-tight">{p.name}</p>
                     </div>
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-paper text-ink transition group-hover:translate-x-0.5">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-accent transition group-hover:translate-x-0.5">
                       <ArrowUpRight size={20} strokeWidth={1.75} />
                     </span>
                   </div>
@@ -150,12 +150,12 @@ export default function HojePage() {
           {/* Resumo */}
           <SectionTitle>Resumo</SectionTitle>
           <div className="grid grid-cols-2 gap-3">
-            <Link href="/gastos" className="rounded-2xl border border-line bg-surface p-4 transition hover:border-faint">
-              <p className="text-2xs font-medium uppercase tracking-label text-muted">Gastos do mês</p>
+            <Link href="/gastos" className="rounded-2xl bg-surface shadow-card p-4 transition hover:border-faint">
+              <p className="text-[13px] font-medium text-muted">Gastos do mês</p>
               <p className="figure mt-3 text-[30px] leading-none">{money(data.monthTotal)}</p>
             </Link>
-            <Link href="/estudos" className="rounded-2xl border border-line bg-surface p-4 transition hover:border-faint">
-              <p className="text-2xs font-medium uppercase tracking-label text-muted">Estudo na semana</p>
+            <Link href="/estudos" className="rounded-2xl bg-surface shadow-card p-4 transition hover:border-faint">
+              <p className="text-[13px] font-medium text-muted">Estudo na semana</p>
               <p className="figure mt-3 text-[30px] leading-none">{formatDuration(data.studyWeek)}</p>
               <Progress value={data.studyWeek / studyGoal} tone="accent" className="mt-3" />
               <p className="mt-1.5 text-xs text-muted">meta {formatDuration(studyGoal)}</p>

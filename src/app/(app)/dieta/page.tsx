@@ -75,7 +75,7 @@ export default function DietaPage() {
       <Card className="mt-4">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-2xs font-medium uppercase tracking-label text-muted">Hidratação</p>
+            <p className="text-[13px] font-medium text-muted">Hidratação</p>
             <p className="figure mt-1 text-[36px] leading-none">
               {glasses}
               <span className="text-faint">/{waterGoal}</span>

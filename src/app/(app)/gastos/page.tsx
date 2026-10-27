@@ -179,7 +179,7 @@ export default function GastosPage() {
         {selected && (
           <div className="space-y-5">
             <p className="figure text-[44px] leading-none">{money(selected.amount)}</p>
-            <dl className="divide-y divide-line rounded-2xl border border-line bg-surface px-4 text-sm">
+            <dl className="divide-y divide-line rounded-2xl bg-surface shadow-card px-4 text-sm">
               <Info label="Categoria" value={categoryInfo(selected.category).label} />
               <Info label="Data" value={friendlyDay(selected.spent_on)} />
               <Info label="Estabelecimento" value={selected.merchant ?? '—'} />
@@ -188,8 +188,8 @@ export default function GastosPage() {
             </dl>
             {selected.items && selected.items.length > 0 && (
               <div>
-                <p className="mb-2 text-2xs font-medium uppercase tracking-label text-muted">Itens da nota</p>
-                <ul className="divide-y divide-line rounded-2xl border border-line bg-surface px-4 text-sm">
+                <p className="mb-2 text-[13px] font-medium text-muted">Itens da nota</p>
+                <ul className="divide-y divide-line rounded-2xl bg-surface shadow-card px-4 text-sm">
                   {selected.items.map((it, i) => (
                     <li key={i} className="flex justify-between gap-3 py-2.5">
                       <span className="truncate">{it.name}</span>
@@ -202,7 +202,7 @@ export default function GastosPage() {
             {receiptUrl && (
               <a href={receiptUrl} target="_blank" rel="noreferrer" className="block">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={receiptUrl} alt="Foto da nota" className="max-h-80 w-full rounded-2xl border border-line bg-surface object-contain" />
+                <img src={receiptUrl} alt="Foto da nota" className="max-h-80 w-full rounded-2xl bg-surface shadow-card object-contain" />
               </a>
             )}
             <Button variant="danger" block onClick={() => remove(selected)}>

@@ -41,10 +41,10 @@ function Onboarding() {
 
   return (
     <main className="mx-auto min-h-dvh max-w-sm px-6 pb-10 pt-[calc(4rem+env(safe-area-inset-top))]">
-      <p className="text-2xs font-medium uppercase tracking-label text-muted">Primeiros passos</p>
-      <h1 className="mt-2 font-serif text-[44px] leading-[1.02]">Olá, {me.display_name}.</h1>
+      <p className="text-[13px] font-medium text-muted">Primeiros passos</p>
+      <h1 className="mt-2 font-serif text-[36px] leading-[1.08]">Olá, {me.display_name}.</h1>
       <p className="mt-3 text-[15px] leading-relaxed text-muted">
-        O app é compartilhado por uma “casa”. Crie a de vocês e envie o código de convite para o seu par — ou entre com o código que você recebeu.
+        Seus dados ficam numa “casa”, que pode ser só sua ou compartilhada com quem mora com você. Crie a sua ou entre com um código de convite.
       </p>
 
       <div className="mt-10 flex rounded-xl bg-sunken p-1">
@@ -66,7 +66,7 @@ function Onboarding() {
             <Input value={houseName} onChange={(e) => setHouseName(e.target.value)} />
           </Field>
         ) : (
-          <Field label="Código de convite" hint="Seis caracteres, disponível no perfil do seu par.">
+          <Field label="Código de convite" hint="Seis caracteres, disponível no perfil de quem criou a casa.">
             <Input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}

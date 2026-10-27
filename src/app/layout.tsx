@@ -4,15 +4,15 @@ import { ServiceWorker } from '@/components/ServiceWorker'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Nós Dois',
-  description: 'Assistente pessoal do casal: treinos, dieta, gastos, atividades, perfumes e estudos.',
+  title: 'Ritmo',
+  description: 'Assistente pessoal: treinos, alimentação, finanças, tarefas, perfumes e estudos — para você e quem mora com você.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'Nós Dois', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'Ritmo', statusBarStyle: 'default' },
   icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#F5F3EF',
+  themeColor: '#F3F3F5',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',

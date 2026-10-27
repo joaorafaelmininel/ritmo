@@ -24,15 +24,22 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
-      <ul className="mx-auto flex max-w-lg justify-around px-2">
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      <ul className="pointer-events-auto mx-auto flex max-w-md items-center justify-between rounded-full bg-ink/95 p-1.5 shadow-lift backdrop-blur-xl">
         {ITEMS.map(({ href, label, icon: Icon }) => {
           const active = isActive(href)
           return (
-            <li key={href} className="flex-1">
-              <Link href={href} className={cx('flex flex-col items-center gap-1 pb-2 pt-2.5 text-2xs font-medium transition', active ? 'text-ink' : 'text-faint hover:text-muted')}>
-                <Icon size={21} strokeWidth={active ? 2 : 1.6} />
-                {label}
+            <li key={href} className={cx('transition-all', active ? 'flex-[1.6]' : 'flex-1')}>
+              <Link
+                href={href}
+                aria-label={label}
+                className={cx(
+                  'flex h-12 items-center justify-center gap-2 rounded-full text-[13px] font-semibold transition-all',
+                  active ? 'bg-white text-ink' : 'text-white/55 hover:text-white',
+                )}
+              >
+                <Icon size={20} strokeWidth={active ? 2.2 : 1.8} />
+                {active && <span>{label}</span>}
               </Link>
             </li>
           )

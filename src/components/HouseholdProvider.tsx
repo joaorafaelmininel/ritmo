@@ -68,10 +68,10 @@ export function HouseholdProvider({ children, requireHousehold = true }: { child
       household,
       members,
       partner: members.find((m) => m.id !== me.id) ?? null,
-      nameOf: (id) => (id ? byId.get(id)?.profile.display_name ?? '—' : 'Os dois'),
+      nameOf: (id) => (id ? byId.get(id)?.profile.display_name ?? '—' : 'Todos'),
       colorOf: (id) => {
         const entry = id ? byId.get(id) : undefined
-        return entry ? personColor(entry.profile.avatar, entry.index) : '#77726A'
+        return entry ? personColor(entry.profile.avatar, entry.index) : '#6E6E7A'
       },
       refresh: load,
     }
@@ -83,7 +83,7 @@ export function HouseholdProvider({ children, requireHousehold = true }: { child
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 
-/** Monograma da pessoa (ou dos dois, quando id é null). */
+/** Monograma da pessoa (ou de todos da casa, quando id é null). */
 export function PersonMark({ id, size = 24 }: { id: string | null | undefined; size?: number }) {
   const { nameOf, colorOf, members } = useHousehold()
   if (!id) {
@@ -105,7 +105,7 @@ export function PersonPicker({ value, onChange, allowBoth = false }: { value: st
   const { members, me } = useHousehold()
   const options = [
     ...members.map((m) => ({ id: m.id as string | null, label: m.id === me.id ? `${m.display_name} (você)` : m.display_name })),
-    ...(allowBoth && members.length > 1 ? [{ id: null, label: 'Os dois' }] : []),
+    ...(allowBoth && members.length > 1 ? [{ id: null, label: 'Todos' }] : []),
   ]
   return (
     <div className="flex flex-wrap gap-2">

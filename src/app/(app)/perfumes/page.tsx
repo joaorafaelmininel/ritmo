@@ -71,22 +71,22 @@ export default function PerfumesPage() {
       <PersonSwitch value={owner} onChange={setOwner} />
 
       {/* Perfume de hoje */}
-      <div className="rounded-2xl border border-line bg-surface p-5">
-        <p className="text-2xs font-medium uppercase tracking-label text-muted">{isMe ? 'Seu perfume hoje' : 'Perfume de hoje'}</p>
+      <div className="rounded-2xl bg-surface shadow-card p-5">
+        <p className="text-[13px] font-medium text-muted">{isMe ? 'Seu perfume hoje' : 'Perfume de hoje'}</p>
         {todayWears.length > 0 ? (
           <div className="mt-2 space-y-1">
             {todayWears.map((w) => {
               const p = byId.get(w.perfume_id)
               return (
                 <div key={w.id}>
-                  <p className="font-serif text-[32px] leading-tight">{p?.name ?? 'Perfume'}</p>
+                  <p className="font-serif text-[26px] leading-tight">{p?.name ?? 'Perfume'}</p>
                   <p className="text-sm text-muted">{[p?.brand, w.occasion, w.compliment && 'recebeu elogio'].filter(Boolean).join(' · ')}</p>
                 </div>
               )
             })}
           </div>
         ) : (
-          <p className="mt-2 font-serif text-[32px] leading-tight text-ink-soft">{isMe ? 'Qual você escolheu hoje?' : 'Nenhum registro hoje'}</p>
+          <p className="mt-2 font-serif text-[26px] leading-tight text-ink-soft">{isMe ? 'Qual você escolheu hoje?' : 'Nenhum registro hoje'}</p>
         )}
         {isMe && (
           <Button className="mt-4" variant={todayWears.length ? 'secondary' : 'primary'} icon={Plus} onClick={() => setWearOpen(true)} disabled={collection.length === 0}>
@@ -130,7 +130,7 @@ export default function PerfumesPage() {
                   return (
                     <Card key={p.id} className="relative flex flex-col !p-0" onClick={isMe ? () => setEditing(p) : undefined}>
                       <div className="relative flex h-24 items-end rounded-t-2xl px-4 pb-3" style={{ backgroundColor: `${color}14` }}>
-                        <span className="font-serif text-[40px] italic leading-none" style={{ color }}>
+                        <span className="font-serif text-[40px] leading-none" style={{ color }}>
                           {(p.brand ?? p.name).slice(0, 1)}
                         </span>
                         <button
@@ -212,7 +212,7 @@ export default function PerfumesPage() {
                         ))}
                       </span>
                     )}
-                    {w.note && <p className="mt-1.5 text-sm italic text-ink-soft">“{w.note}”</p>}
+                    {w.note && <p className="mt-1.5 text-sm text-ink-soft">“{w.note}”</p>}
                   </li>
                 )
               })}
@@ -275,8 +275,8 @@ function Summary({ perfumes, usage, wears }: { perfumes: Perfume[]; usage: Usage
 
       {champion && champion.c > 0 && (
         <Card>
-          <p className="text-2xs font-medium uppercase tracking-label text-muted">Mais elogiado</p>
-          <p className="mt-1 font-serif text-[28px] leading-tight">{champion.p.name}</p>
+          <p className="text-[13px] font-medium text-muted">Mais elogiado</p>
+          <p className="mt-1 font-serif text-[24px] leading-tight">{champion.p.name}</p>
           <p className="text-sm text-muted">
             {champion.c} {champion.c === 1 ? 'elogio' : 'elogios'}
           </p>
@@ -284,7 +284,7 @@ function Summary({ perfumes, usage, wears }: { perfumes: Perfume[]; usage: Usage
       )}
 
       <Card>
-        <p className="mb-4 text-2xs font-medium uppercase tracking-label text-muted">Mais usados</p>
+        <p className="mb-4 text-[13px] font-medium text-muted">Mais usados</p>
         {ranking.length === 0 ? (
           <p className="text-sm text-muted">Registre alguns usos para ver o ranking.</p>
         ) : (
@@ -307,7 +307,7 @@ function Summary({ perfumes, usage, wears }: { perfumes: Perfume[]; usage: Usage
 
       {forgotten.length > 0 && (
         <Card>
-          <p className="text-2xs font-medium uppercase tracking-label text-muted">Esquecidos</p>
+          <p className="text-[13px] font-medium text-muted">Esquecidos</p>
           <p className="mt-1 text-sm text-muted">Sem uso há mais de 30 dias.</p>
           <ul className="mt-3 divide-y divide-line text-sm">
             {forgotten.map(({ p, days }) => (
@@ -375,7 +375,7 @@ function WearSheet({
   return (
     <Sheet open={open} onClose={onClose} title="Perfume do dia">
       <div className="space-y-6">
-        <div className="max-h-64 divide-y divide-line overflow-y-auto rounded-2xl border border-line bg-surface">
+        <div className="max-h-64 divide-y divide-line overflow-y-auto rounded-2xl bg-surface shadow-card">
           {sorted.map((p) => {
             const active = perfumeId === p.id
             return (
@@ -388,7 +388,7 @@ function WearSheet({
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: familyColor(p.family) }} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{p.name}</span>
-                  <span className={cx('block truncate text-xs', active ? 'text-paper/60' : 'text-muted')}>{p.brand ?? ''}</span>
+                  <span className={cx('block truncate text-xs', active ? 'text-white/70' : 'text-muted')}>{p.brand ?? ''}</span>
                 </span>
                 {p.favorite && <Heart size={14} className={active ? 'fill-paper text-paper' : 'fill-accent text-accent'} />}
               </button>
@@ -421,7 +421,7 @@ function WearSheet({
           </div>
         </div>
 
-        <label className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3.5">
+        <label className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3.5 shadow-card">
           <span className="font-medium">Recebi elogio</span>
           <input type="checkbox" checked={compliment} onChange={(e) => setCompliment(e.target.checked)} className="peer sr-only" />
           <span className="relative h-6 w-10 rounded-full bg-line transition peer-checked:bg-accent after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-4" />
@@ -515,7 +515,7 @@ function PerfumeSheet({ perfume, onClose, onSaved }: { perfume: Perfume | 'novo'
         <Field label="Notas olfativas">
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex.: íris, pralinê, baunilha" />
         </Field>
-        <label className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3.5">
+        <label className="flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3.5 shadow-card">
           <span>
             <span className="block font-medium">Lista de desejos</span>
             <span className="block text-xs text-muted">Ainda não tenho este perfume</span>

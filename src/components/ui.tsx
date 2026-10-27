@@ -31,8 +31,8 @@ export function PageHeader({
       )}
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          {eyebrow && <p className="mb-1 text-2xs font-medium uppercase tracking-label text-muted">{eyebrow}</p>}
-          <h1 className="font-serif text-[40px] leading-[1.02] tracking-[-0.01em] text-ink">{title}</h1>
+          {eyebrow && <p className="mb-1 text-[13px] font-medium text-muted">{eyebrow}</p>}
+          <h1 className="font-serif text-[34px] leading-[1.05] text-ink">{title}</h1>
           {subtitle && <p className="mt-1.5 text-sm text-muted">{subtitle}</p>}
         </div>
         {action}
@@ -46,7 +46,7 @@ export function Card({ children, className, onClick, style }: { children: ReactN
     <div
       onClick={onClick}
       style={style}
-      className={cx('rounded-2xl border border-line bg-surface p-4', onClick && 'cursor-pointer transition active:scale-[0.995] hover:border-faint', className)}
+      className={cx('rounded-2xl border border-transparent bg-surface p-4 shadow-card', onClick && 'cursor-pointer transition active:scale-[0.99]', className)}
     >
       {children}
     </div>
@@ -56,14 +56,14 @@ export function Card({ children, className, onClick, style }: { children: ReactN
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="mb-3 mt-8 flex items-center justify-between">
-      <h2 className="text-2xs font-medium uppercase tracking-label text-muted">{children}</h2>
+      <h2 className="font-serif text-[19px] text-ink">{children}</h2>
       {action}
     </div>
   )
 }
 
 export function TextLink({ href, children, onClick }: { href?: string; children: ReactNode; onClick?: () => void }) {
-  const className = 'text-[13px] font-medium text-ink underline decoration-line decoration-1 underline-offset-4 transition hover:decoration-ink'
+  const className = 'text-[14px] font-medium text-accent transition hover:text-accent-ink'
   if (href)
     return (
       <Link href={href} className={className}>
@@ -89,11 +89,11 @@ export function Button({ variant = 'primary', size = 'md', block, icon: Icon, cl
     <button
       {...props}
       className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-medium transition active:scale-[0.985] disabled:pointer-events-none disabled:opacity-40',
+        'inline-flex items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold transition active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40',
         size === 'md' ? 'h-11' : 'h-14 text-base',
         variant === 'primary' && 'bg-ink text-paper hover:bg-ink-soft',
         variant === 'accent' && 'bg-accent text-white hover:bg-accent-ink',
-        variant === 'secondary' && 'border border-line bg-surface text-ink hover:border-faint',
+        variant === 'secondary' && 'bg-surface text-ink shadow-card ring-1 ring-line hover:ring-faint',
         variant === 'ghost' && 'text-muted hover:bg-sunken hover:text-ink',
         variant === 'danger' && 'text-bad hover:bg-bad-soft',
         block && 'w-full',
@@ -121,7 +121,7 @@ export function Label({ children }: { children: ReactNode }) {
 }
 
 const inputClass =
-  'w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-base text-ink outline-none transition placeholder:text-faint focus:border-ink focus:ring-4 focus:ring-ink/5'
+  'w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-base text-ink outline-none transition placeholder:text-faint focus:border-accent focus:ring-4 focus:ring-accent/15'
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={cx(inputClass, props.className)} />
@@ -170,12 +170,12 @@ export function Choice<T extends string | number>({
             className={cx(
               'flex flex-col items-center justify-center gap-1.5 rounded-xl border px-2 text-center transition active:scale-[0.97]',
               compact ? 'min-h-[44px] py-2' : 'min-h-[68px] py-3',
-              active ? 'border-ink bg-ink text-paper' : 'border-line bg-surface text-ink-soft hover:border-faint',
+              active ? 'border-ink bg-ink text-white' : 'border-transparent bg-surface text-ink-soft shadow-card hover:border-line',
             )}
           >
-            {Icon && <Icon size={compact ? 16 : 20} strokeWidth={1.6} />}
+            {Icon && <Icon size={compact ? 16 : 20} strokeWidth={1.75} />}
             <span className="text-[13px] font-medium leading-tight">{o.label}</span>
-            {o.hint && <span className={cx('text-2xs leading-tight', active ? 'text-paper/70' : 'text-muted')}>{o.hint}</span>}
+            {o.hint && <span className={cx('text-2xs leading-tight', active ? 'text-white/70' : 'text-muted')}>{o.hint}</span>}
           </button>
         )
       })}
@@ -206,8 +206,8 @@ export function Scale({
               onClick={() => onChange(o.value)}
               aria-label={o.label}
               className={cx(
-                'num h-12 rounded-lg border text-base font-medium transition active:scale-95',
-                active ? 'border-accent bg-accent text-white' : 'border-line bg-surface text-muted',
+                'num h-12 rounded-xl text-base font-semibold transition active:scale-95',
+                active ? 'bg-accent text-white' : 'bg-surface text-muted shadow-card',
               )}
             >
               {o.value}
@@ -274,7 +274,7 @@ export function Chips<T extends string>({
           onClick={() => onChange(o.value)}
           className={cx(
             'h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-medium transition',
-            o.value === value ? 'border-ink bg-ink text-paper' : 'border-line bg-surface text-ink-soft hover:border-faint',
+            o.value === value ? 'border-ink bg-ink text-white' : 'border-transparent bg-surface text-ink-soft shadow-card hover:border-line',
           )}
         >
           {o.label}
@@ -303,7 +303,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
       <div className="relative max-h-[92dvh] w-full max-w-lg animate-sheet overflow-y-auto rounded-t-3xl bg-paper px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3 sm:rounded-3xl">
         <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-line sm:hidden" />
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="font-serif text-[28px] leading-tight">{title}</h2>
+          <h2 className="font-serif text-[24px] leading-tight">{title}</h2>
           <button onClick={onClose} aria-label="Fechar" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sunken text-muted hover:text-ink">
             <X size={18} strokeWidth={1.75} />
           </button>
@@ -316,11 +316,11 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
 
 export function EmptyState({ icon: Icon, title, text, action }: { icon: LucideIcon; title: string; text?: string; action?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed border-line px-6 py-10 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-sunken text-muted">
-        <Icon size={22} strokeWidth={1.5} />
+    <div className="flex flex-col items-center rounded-2xl bg-surface px-6 py-10 text-center shadow-card">
+      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+        <Icon size={22} strokeWidth={1.75} />
       </span>
-      <p className="mt-4 font-serif text-2xl">{title}</p>
+      <p className="mt-4 font-serif text-xl">{title}</p>
       {text && <p className="mt-1 max-w-xs text-sm text-muted">{text}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
@@ -329,7 +329,7 @@ export function EmptyState({ icon: Icon, title, text, action }: { icon: LucideIc
 
 export function Fab({ onClick, label, href }: { onClick?: () => void; label: string; href?: string }) {
   const className =
-    'fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-5 z-30 flex h-12 items-center gap-2 rounded-full bg-ink pl-4 pr-5 text-[15px] font-medium text-paper shadow-lift transition active:scale-95 md:right-[calc(50%-14rem)]'
+    'fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] right-5 z-30 flex h-12 items-center gap-2 rounded-full bg-accent pl-4 pr-5 text-[15px] font-semibold text-white shadow-lift transition active:scale-95 md:right-[calc(50%-14rem)]'
   const content = (
     <>
       <Plus size={18} strokeWidth={2} />
@@ -353,7 +353,7 @@ export function Fab({ onClick, label, href }: { onClick?: () => void; label: str
 export function Metric({ label, value, detail, className }: { label: string; value: ReactNode; detail?: ReactNode; className?: string }) {
   return (
     <div className={className}>
-      <p className="text-2xs font-medium uppercase tracking-label text-muted">{label}</p>
+      <p className="text-[13px] font-medium text-muted">{label}</p>
       <p className="figure mt-1 whitespace-nowrap text-[28px] leading-none">{value}</p>
       {detail && <p className="mt-1.5 text-xs text-muted">{detail}</p>}
     </div>
@@ -362,7 +362,7 @@ export function Metric({ label, value, detail, className }: { label: string; val
 
 export function Progress({ value, className, tone = 'ink' }: { value: number; className?: string; tone?: 'ink' | 'accent' | 'good' }) {
   return (
-    <div className={cx('h-1 w-full overflow-hidden rounded-full bg-sunken', className)}>
+    <div className={cx('h-1.5 w-full overflow-hidden rounded-full bg-sunken', className)}>
       <div
         className={cx('h-full rounded-full transition-all duration-500', tone === 'ink' ? 'bg-ink' : tone === 'accent' ? 'bg-accent' : 'bg-good')}
         style={{ width: `${Math.min(100, Math.max(0, value * 100))}%` }}

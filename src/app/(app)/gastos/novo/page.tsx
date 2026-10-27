@@ -124,9 +124,9 @@ export default function NovoGastoPage() {
           </span>
           <span className="flex-1">
             <span className="block font-serif text-[24px] leading-tight">Fotografar nota fiscal</span>
-            <span className="mt-0.5 block text-sm text-paper/60">Valor, data, loja e itens preenchidos automaticamente</span>
+            <span className="mt-0.5 block text-sm text-white/70">Valor, data, loja e itens preenchidos automaticamente</span>
           </span>
-          <ChevronRight size={18} className="text-paper/40 transition group-hover:translate-x-0.5" />
+          <ChevronRight size={18} className="text-white/50 transition group-hover:translate-x-0.5" />
         </button>
       ) : (
         <Card className="flex items-center gap-4">
@@ -193,7 +193,7 @@ export default function NovoGastoPage() {
         </div>
 
         {items.length > 0 && (
-          <details className="group rounded-2xl border border-line bg-surface px-4 py-3">
+          <details className="group rounded-2xl bg-surface shadow-card px-4 py-3">
             <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium">
               {items.length} itens lidos da nota
               <ChevronRight size={16} className="text-muted transition group-open:rotate-90" />

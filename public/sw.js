@@ -1,5 +1,5 @@
 // Service worker mínimo: permite instalar o app e mostra uma página simples sem internet.
-const CACHE = 'nos-dois-v2'
+const CACHE = 'ritmo-v3'
 const OFFLINE_URL = '/offline.html'
 
 self.addEventListener('install', (event) => {

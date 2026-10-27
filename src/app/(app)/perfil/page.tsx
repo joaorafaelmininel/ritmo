@@ -35,7 +35,7 @@ export default function PerfilPage() {
   }
 
   async function share() {
-    const text = `Entre no Nós Dois com o código ${household?.invite_code}: ${window.location.origin}`
+    const text = `Entre no Ritmo com o código ${household?.invite_code}: ${window.location.origin}`
     try {
       if (navigator.share) await navigator.share({ text })
       else {
@@ -57,7 +57,7 @@ export default function PerfilPage() {
       <div className="flex items-center gap-4">
         <Monogram name={name || me.display_name} color={personColor(color)} size={64} />
         <div>
-          <p className="font-serif text-[28px] leading-tight">{name || me.display_name}</p>
+          <p className="font-serif text-[24px] leading-tight">{name || me.display_name}</p>
           <p className="text-sm text-muted">{household?.name}</p>
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function PerfilPage() {
                 onClick={() => setColor(c.value)}
                 aria-label={c.value}
                 className="flex h-10 w-10 items-center justify-center rounded-full ring-offset-2 ring-offset-paper transition"
-                style={{ backgroundColor: c.color, boxShadow: color === c.value ? `0 0 0 2px #F5F3EF, 0 0 0 4px ${c.color}` : undefined }}
+                style={{ backgroundColor: c.color, boxShadow: color === c.value ? `0 0 0 2px #F3F3F5, 0 0 0 4px ${c.color}` : undefined }}
               >
                 {color === c.value && <Check size={16} className="text-white" strokeWidth={2.5} />}
               </button>
@@ -109,14 +109,14 @@ export default function PerfilPage() {
           ))}
         </div>
         <div className="mt-5 border-t border-line pt-5">
-          <p className="text-2xs font-medium uppercase tracking-label text-muted">Código de convite</p>
+          <p className="text-[13px] font-medium text-muted">Código de convite</p>
           <div className="mt-2 flex items-center justify-between gap-3">
             <span className="figure text-[36px] leading-none tracking-[0.15em]">{household?.invite_code}</span>
             <Button variant="secondary" icon={Share2} onClick={share}>
               Enviar
             </Button>
           </div>
-          {members.length < 2 && <p className="mt-3 text-sm text-muted">Seu par cria uma conta no app e informa este código para entrar na casa.</p>}
+          {members.length < 2 && <p className="mt-3 text-sm text-muted">Quem for participar cria uma conta no app e informa este código.</p>}
         </div>
       </Card>
 

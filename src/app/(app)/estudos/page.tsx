@@ -31,7 +31,7 @@ function writeTimer(value: number | null) {
 
 function LangBadge({ language, className }: { language: string; className?: string }) {
   return (
-    <span className={cx('num inline-flex h-5 min-w-[1.75rem] items-center justify-center rounded border border-line px-1 text-[10px] font-semibold tracking-wide text-ink-soft', className)}>
+    <span className={cx('num inline-flex h-5 min-w-[1.75rem] items-center justify-center rounded-full bg-accent-soft px-1.5 text-[10px] font-bold tracking-wide text-accent', className)}>
       {languageCode(language)}
     </span>
   )
@@ -134,7 +134,7 @@ export default function EstudosPage() {
         <div className="flex items-start justify-between gap-4">
           <Metric label="Esta semana" value={formatDuration(stats.week)} detail={`de ${formatDuration(goal)} planejados`} />
           <div className="text-right">
-            <p className="text-2xs font-medium uppercase tracking-label text-muted">Sequência</p>
+            <p className="text-[13px] font-medium text-muted">Sequência</p>
             <p className="figure mt-1 text-[30px] leading-none">{stats.streak}</p>
             <p className="mt-1.5 text-xs text-muted">{stats.streak === 1 ? 'dia' : 'dias'}</p>
           </div>
@@ -162,7 +162,7 @@ export default function EstudosPage() {
           {timerStart ? (
             <button onClick={stopTimer} className="flex w-full items-center justify-between rounded-2xl bg-ink px-5 py-4 text-paper transition active:scale-[0.99]">
               <span className="text-left">
-                <span className="block text-2xs font-medium uppercase tracking-label text-paper/60">Estudando</span>
+                <span className="block text-[13px] font-medium text-white/70">Estudando</span>
                 <span className="figure block text-[36px] leading-none">
                   {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
                 </span>
@@ -218,7 +218,7 @@ export default function EstudosPage() {
             <div className="flex h-1.5 gap-0.5 overflow-hidden rounded-full">
               {[1, 2, 3, 4, 5].map((box) => {
                 const count = myCards.filter((c) => c.box === box).length
-                return count ? <div key={box} className="h-full" style={{ flex: count, backgroundColor: `rgba(29,28,26,${0.15 + box * 0.17})` }} /> : null
+                return count ? <div key={box} className="h-full" style={{ flex: count, backgroundColor: `rgba(47,107,255,${0.15 + box * 0.17})` }} /> : null
               })}
             </div>
             <div className="mt-3 grid grid-cols-5 text-center">
@@ -512,12 +512,12 @@ function Review({ cards, onClose }: { cards: VocabCard[]; onClose: () => void })
 
         {card ? (
           <>
-            <button onClick={() => setRevealed(true)} className="mt-6 flex flex-1 flex-col justify-center rounded-3xl border border-line bg-surface p-8 text-left">
+            <button onClick={() => setRevealed(true)} className="mt-6 flex flex-1 flex-col justify-center rounded-3xl bg-surface p-8 shadow-card text-left">
               <LangBadge language={card.language} className="self-start" />
               <p className="mt-6 font-serif text-[44px] leading-[1.05]">{card.term}</p>
               <div className={cx('mt-8 border-t border-line pt-6 transition-opacity duration-300', revealed ? 'opacity-100' : 'opacity-0')}>
                 <p className="text-xl font-medium">{card.translation}</p>
-                {card.example && <p className="mt-3 font-serif text-lg italic text-muted">“{card.example}”</p>}
+                {card.example && <p className="mt-3 text-lg text-muted">“{card.example}”</p>}
               </div>
               {!revealed && <p className="mt-2 text-sm text-faint">Toque para revelar</p>}
             </button>
@@ -538,7 +538,7 @@ function Review({ cards, onClose }: { cards: VocabCard[]; onClose: () => void })
           </>
         ) : (
           <div className="flex flex-1 animate-rise flex-col justify-center">
-            <p className="text-2xs font-medium uppercase tracking-label text-muted">Revisão concluída</p>
+            <p className="text-[13px] font-medium text-muted">Revisão concluída</p>
             <p className="mt-2 font-serif text-[52px] leading-none">
               {right}
               <span className="text-faint">/{queue.length}</span>

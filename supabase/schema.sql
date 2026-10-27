@@ -1,5 +1,5 @@
 -- =============================================================
--- Assistente do Casal – schema completo
+-- Ritmo – schema completo
 -- Rode este arquivo inteiro no Supabase: SQL Editor > New query.
 -- Pode ser executado de novo sem perder dados (idempotente).
 -- =============================================================
@@ -20,7 +20,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   household_id uuid references public.households (id) on delete set null,
   display_name text not null default 'Eu',
-  avatar text not null default 'clay',  -- cor do monograma
+  avatar text not null default 'blue',  -- cor do monograma
   weekly_study_goal_minutes int not null default 150,
   daily_water_goal int not null default 8,
   created_at timestamptz not null default now()

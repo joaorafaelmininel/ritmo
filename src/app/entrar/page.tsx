@@ -42,9 +42,11 @@ export default function EntrarPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pb-10 pt-[calc(4rem+env(safe-area-inset-top))]">
       <div className="flex-1">
-        <Wordmark className="text-[56px] leading-none" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/icons/icon-192.png" alt="" className="mb-6 h-14 w-14 rounded-2xl shadow-lift" />
+        <Wordmark className="text-[52px] leading-none" />
         <p className="mt-4 max-w-[17rem] text-[15px] leading-relaxed text-muted">
-          Treinos, alimentação, finanças, perfumes e estudos. A rotina de vocês dois, organizada num só lugar.
+          Treinos, alimentação, finanças, tarefas e estudos. Sua rotina — e a de quem mora com você — num só lugar.
         </p>
 
         <form onSubmit={submit} className="mt-12 space-y-5">
@@ -76,7 +78,7 @@ export default function EntrarPage() {
 
       <p className="mt-10 text-center text-sm text-muted">
         {mode === 'login' ? 'Ainda não tem conta?' : 'Já tem uma conta?'}{' '}
-        <button type="button" onClick={() => setMode(mode === 'login' ? 'cadastro' : 'login')} className="font-medium text-ink underline decoration-line underline-offset-4">
+        <button type="button" onClick={() => setMode(mode === 'login' ? 'cadastro' : 'login')} className="font-semibold text-accent">
           {mode === 'login' ? 'Criar conta' : 'Entrar'}
         </button>
       </p>

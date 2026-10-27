@@ -75,11 +75,11 @@ export default function TreinosPage() {
               <Card key={plan.id} className={cx('!p-0', isToday && 'border-ink')}>
                 <div className="flex items-start gap-3 p-4">
                   <div className="min-w-0 flex-1">
-                    {isToday && <p className="mb-1 text-2xs font-medium uppercase tracking-label text-accent">Hoje</p>}
-                    <p className="truncate font-serif text-[26px] leading-tight">{plan.name}</p>
+                    {isToday && <p className="mb-1 text-[13px] font-medium text-accent">Hoje</p>}
+                    <p className="truncate font-serif text-[22px] leading-tight">{plan.name}</p>
                     <p className="mt-1 text-sm text-muted">
                       {plan.plan_exercises?.length ?? 0} {plan.plan_exercises?.length === 1 ? 'exercício' : 'exercícios'}
-                      {plan.assigned_to === null && ' · para os dois'}
+                      {plan.assigned_to === null && ' · para todos'}
                     </p>
                   </div>
                   <TextLink href={`/treinos/plano/${plan.id}`}>Editar</TextLink>
@@ -142,7 +142,7 @@ export default function TreinosPage() {
                   {effort && <span>Esforço {effort.value}/5 · {effort.label}</span>}
                   {mood && <span>{mood}</span>}
                 </div>
-                {s.feeling_note && <p className="mt-2 font-serif text-[17px] italic leading-snug text-ink-soft">“{s.feeling_note}”</p>}
+                {s.feeling_note && <p className="mt-2 text-sm leading-snug text-ink-soft">“{s.feeling_note}”</p>}
               </div>
             )
           })}

@@ -1,7 +1,7 @@
 export function Wordmark({ className = '' }: { className?: string }) {
   return (
-    <span className={`font-serif tracking-[-0.01em] ${className}`}>
-      Nós <span className="italic text-accent">Dois</span>
+    <span className={`font-serif ${className}`}>
+      ritmo<span className="text-accent">.</span>
     </span>
   )
 }

@@ -87,18 +87,18 @@ export const MEAL_FEELINGS = [
 ]
 
 export const EXPENSE_CATEGORIES = [
-  { value: 'mercado', label: 'Mercado', icon: ShoppingCart, color: '#6F8C74' },
-  { value: 'restaurante', label: 'Restaurante', icon: UtensilsCrossed, color: '#B0623F' },
-  { value: 'casa', label: 'Casa', icon: Home, color: '#8C857A' },
-  { value: 'transporte', label: 'Transporte', icon: Car, color: '#5D6E86' },
-  { value: 'saude', label: 'Saúde', icon: HeartPulse, color: '#4E8282' },
-  { value: 'beleza', label: 'Beleza', icon: Sparkles, color: '#B76E79' },
-  { value: 'lazer', label: 'Lazer', icon: Clapperboard, color: '#7D5D7B' },
-  { value: 'educacao', label: 'Educação', icon: GraduationCap, color: '#B48C3F' },
-  { value: 'pets', label: 'Pets', icon: PawPrint, color: '#9A7B5B' },
-  { value: 'vestuario', label: 'Vestuário', icon: Shirt, color: '#6B5E8C' },
-  { value: 'contas', label: 'Contas', icon: Receipt, color: '#556B5A' },
-  { value: 'outros', label: 'Outros', icon: Circle, color: '#A39E95' },
+  { value: 'mercado', label: 'Mercado', icon: ShoppingCart, color: '#12A150' },
+  { value: 'restaurante', label: 'Restaurante', icon: UtensilsCrossed, color: '#FF6B3D' },
+  { value: 'casa', label: 'Casa', icon: Home, color: '#8E5CF7' },
+  { value: 'transporte', label: 'Transporte', icon: Car, color: '#2F6BFF' },
+  { value: 'saude', label: 'Saúde', icon: HeartPulse, color: '#0EA5A4' },
+  { value: 'beleza', label: 'Beleza', icon: Sparkles, color: '#F0508C' },
+  { value: 'lazer', label: 'Lazer', icon: Clapperboard, color: '#C026D3' },
+  { value: 'educacao', label: 'Educação', icon: GraduationCap, color: '#F5A524' },
+  { value: 'pets', label: 'Pets', icon: PawPrint, color: '#A16207' },
+  { value: 'vestuario', label: 'Vestuário', icon: Shirt, color: '#6366F1' },
+  { value: 'contas', label: 'Contas', icon: Receipt, color: '#475569' },
+  { value: 'outros', label: 'Outros', icon: Circle, color: '#94A3B8' },
 ] as const
 
 export const EXPENSE_CATEGORY_VALUES = EXPENSE_CATEGORIES.map((c) => c.value)
@@ -121,20 +121,20 @@ export const ACTIVITY_CATEGORIES = [
 export const PERFUME_FAMILIES = ['Floral', 'Frutado', 'Cítrico', 'Amadeirado', 'Oriental', 'Gourmand', 'Aquático', 'Chipre', 'Fougère', 'Verde']
 
 const FAMILY_COLORS: Record<string, string> = {
-  Floral: '#B76E79',
-  Frutado: '#B0623F',
-  Cítrico: '#B48C3F',
-  Amadeirado: '#8A6A4F',
-  Oriental: '#7D5D7B',
-  Gourmand: '#9A6B45',
-  Aquático: '#5D6E86',
-  Chipre: '#556B5A',
-  Fougère: '#6F8C74',
-  Verde: '#4E8282',
+  Floral: '#F0508C',
+  Frutado: '#FF6B3D',
+  Cítrico: '#F5A524',
+  Amadeirado: '#A16207',
+  Oriental: '#8E5CF7',
+  Gourmand: '#D97706',
+  Aquático: '#2F6BFF',
+  Chipre: '#0F766E',
+  Fougère: '#12A150',
+  Verde: '#0EA5A4',
 }
 
 export function familyColor(family: string | null) {
-  return (family && FAMILY_COLORS[family]) || '#8C857A'
+  return (family && FAMILY_COLORS[family]) || '#94A3B8'
 }
 
 export const PERFUME_CONCENTRATIONS = ['Parfum', 'EDP', 'EDT', 'EDC', 'Body splash', 'Óleo']
@@ -181,12 +181,12 @@ export const LEITNER_INTERVALS = [0, 1, 2, 4, 8, 16]
 
 /** Cores do monograma de cada pessoa (o valor fica em profiles.avatar). */
 export const PERSON_COLORS = [
-  { value: 'clay', color: '#9A4A2C' },
-  { value: 'sage', color: '#4F6F58' },
-  { value: 'slate', color: '#4D5E78' },
-  { value: 'plum', color: '#6E4F6C' },
-  { value: 'ochre', color: '#9C7633' },
-  { value: 'ink', color: '#1D1C1A' },
+  { value: 'blue', color: '#2F6BFF' },
+  { value: 'pink', color: '#F0508C' },
+  { value: 'green', color: '#12A150' },
+  { value: 'violet', color: '#8E5CF7' },
+  { value: 'orange', color: '#FF6B3D' },
+  { value: 'ink', color: '#0B0B0F' },
 ]
 
 export function personColor(avatar: string | null | undefined, fallbackIndex = 0) {
