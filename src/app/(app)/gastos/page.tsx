@@ -160,7 +160,7 @@ export default function GastosPage() {
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-1.5">
                             <span className="truncate font-medium">{e.description}</span>
-                            {e.source === 'nota' && <ScanLine size={13} className="shrink-0 text-faint" aria-label="Lido da nota" />}
+                            {e.source === 'nota' && <ScanLine size={13} className="shrink-0 text-faint" aria-label="Com foto da nota" />}
                           </span>
                           <span className="block truncate text-xs text-muted">{[e.merchant, e.payment_method, nameOf(e.paid_by)].filter(Boolean).join(' · ')}</span>
                         </span>

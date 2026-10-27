@@ -101,8 +101,6 @@ export const EXPENSE_CATEGORIES = [
   { value: 'outros', label: 'Outros', icon: Circle, color: '#94A3B8' },
 ] as const
 
-export const EXPENSE_CATEGORY_VALUES = EXPENSE_CATEGORIES.map((c) => c.value)
-
 export function categoryInfo(value: string) {
   return EXPENSE_CATEGORIES.find((c) => c.value === value) ?? EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1]
 }
