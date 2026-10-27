@@ -1,15 +1,17 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { BookOpen, PenLine, Plus, Square, Timer, X } from 'lucide-react'
 import { supabaseBrowser } from '@/lib/supabase/client'
-import { useHousehold } from '@/components/HouseholdProvider'
+import { PersonSwitch, useHousehold } from '@/components/HouseholdProvider'
 import { useToast } from '@/components/Toast'
-import { Button, Card, Choice, EmptyState, ErrorNote, Field, Input, PageHeader, Pills, Progress, SectionTitle, Sheet, Spinner, Stat, Textarea, cx } from '@/components/ui'
-import { LANGUAGES, LEITNER_INTERVALS, MOODS, STUDY_KINDS, languageFlag, studyKind } from '@/lib/constants'
+import { Button, Card, Chips, Choice, EmptyState, ErrorNote, Field, Input, Label, Metric, PageHeader, Progress, SectionTitle, Sheet, Spinner, TextLink, Textarea, cx } from '@/components/ui'
+import { LANGUAGES, LEITNER_INTERVALS, MOODS, STUDY_KINDS, languageCode, moodLabel, studyKind } from '@/lib/constants'
 import { addDays, formatDuration, friendlyDay, isoDay, startOfWeek, weekdayShort } from '@/lib/format'
 import type { StudySession, VocabCard } from '@/lib/types'
 
 const TIMER_KEY = 'estudo-cronometro'
+const BOX_LABELS = ['Nova', 'Fraca', 'Média', 'Boa', 'Dominada']
 
 function readTimer(): number | null {
   try {
@@ -25,6 +27,14 @@ function writeTimer(value: number | null) {
     if (value) localStorage.setItem(TIMER_KEY, String(value))
     else localStorage.removeItem(TIMER_KEY)
   } catch {}
+}
+
+function LangBadge({ language, className }: { language: string; className?: string }) {
+  return (
+    <span className={cx('num inline-flex h-5 min-w-[1.75rem] items-center justify-center rounded border border-line px-1 text-[10px] font-semibold tracking-wide text-ink-soft', className)}>
+      {languageCode(language)}
+    </span>
+  )
 }
 
 export default function EstudosPage() {
@@ -43,7 +53,12 @@ export default function EstudosPage() {
   const load = useCallback(async () => {
     const supabase = supabaseBrowser()
     const [s, c] = await Promise.all([
-      supabase.from('study_sessions').select('*').gte('studied_on', addDays(isoDay(), -120)).order('studied_on', { ascending: false }).order('created_at', { ascending: false }),
+      supabase
+        .from('study_sessions')
+        .select('*')
+        .gte('studied_on', addDays(isoDay(), -120))
+        .order('studied_on', { ascending: false })
+        .order('created_at', { ascending: false }),
       supabase.from('vocab_cards').select('*').order('created_at', { ascending: false }),
     ])
     setSessions(s.data ?? [])
@@ -79,7 +94,6 @@ export default function EstudosPage() {
     }
     const byLanguage = new Map<string, number>()
     for (const s of mine) byLanguage.set(s.language, (byLanguage.get(s.language) ?? 0) + s.minutes)
-    // últimos 7 dias para o mini gráfico
     const last7 = Array.from({ length: 7 }, (_, i) => {
       const day = addDays(isoDay(), i - 6)
       return { day, minutes: mine.filter((s) => s.studied_on === day).reduce((sum, s) => sum + s.minutes, 0) }
@@ -91,7 +105,9 @@ export default function EstudosPage() {
 
   const goal = owner.weekly_study_goal_minutes || 150
   const maxDay = Math.max(30, ...stats.last7.map((d) => d.minutes))
+  const totalLang = stats.byLanguage.reduce((s, [, m]) => s + m, 0)
   const lastLanguage = mine[0]?.language ?? 'Inglês'
+  const elapsed = timerStart ? Math.floor((now - timerStart) / 1000) : 0
 
   function startTimer() {
     const t = Date.now()
@@ -109,141 +125,161 @@ export default function EstudosPage() {
     setLogOpen(true)
   }
 
-  const elapsed = timerStart ? Math.floor((now - timerStart) / 1000) : 0
-
   return (
     <>
-      <PageHeader title="Estudos" subtitle="Idiomas e tudo o que vocês aprendem" />
+      <PageHeader eyebrow="Aprendizado" title="Estudos" />
+      <PersonSwitch value={person} onChange={setPerson} />
 
-      {members.length > 1 && (
-        <div className="mb-4">
-          <Pills options={members.map((m) => ({ value: m.id, label: `${m.avatar} ${m.display_name}` }))} value={person} onChange={setPerson} />
-        </div>
-      )}
-
-      <Card className="bg-gradient-to-br from-ceu-100 to-ameixa-50">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-sm font-semibold text-tinta/60">Meta da semana</p>
-            <p className="text-3xl font-extrabold">
-              {formatDuration(stats.week)} <span className="text-base font-semibold text-tinta/45">/ {formatDuration(goal)}</span>
-            </p>
-          </div>
+      <Card>
+        <div className="flex items-start justify-between gap-4">
+          <Metric label="Esta semana" value={formatDuration(stats.week)} detail={`de ${formatDuration(goal)} planejados`} />
           <div className="text-right">
-            <p className="text-3xl">{stats.streak > 0 ? '🔥' : '🌱'}</p>
-            <p className="text-xs font-bold text-tinta/60">{stats.streak} {stats.streak === 1 ? 'dia' : 'dias'} seguidos</p>
+            <p className="text-2xs font-medium uppercase tracking-label text-muted">Sequência</p>
+            <p className="figure mt-1 text-[30px] leading-none">{stats.streak}</p>
+            <p className="mt-1.5 text-xs text-muted">{stats.streak === 1 ? 'dia' : 'dias'}</p>
           </div>
         </div>
-        <Progress value={stats.week / goal} className="mt-3 !bg-white/70" />
-        <div className="mt-4 flex h-20 items-end justify-between gap-1.5">
-          {stats.last7.map((d) => (
-            <div key={d.day} className="flex flex-1 flex-col items-center gap-1">
-              <div
-                className={cx('w-full rounded-md', d.minutes ? 'bg-ceu-500' : 'bg-white/70')}
-                style={{ height: `${Math.max(6, (d.minutes / maxDay) * 56)}px` }}
-                title={`${d.minutes} min`}
-              />
-              <span className="text-[10px] font-semibold text-tinta/50">{d.day === isoDay() ? 'hoje' : weekdayShort(d.day)}</span>
-            </div>
-          ))}
+        <Progress value={stats.week / goal} tone="accent" className="mt-4" />
+        <div className="mt-6 flex h-24 items-end justify-between gap-2">
+          {stats.last7.map((d) => {
+            const isToday = d.day === isoDay()
+            return (
+              <div key={d.day} className="flex flex-1 flex-col items-center gap-2">
+                <span className="num text-[10px] text-faint">{d.minutes || ''}</span>
+                <div
+                  className={cx('w-full max-w-[22px] rounded-sm', d.minutes ? (isToday ? 'bg-accent' : 'bg-ink') : 'bg-sunken')}
+                  style={{ height: `${Math.max(3, (d.minutes / maxDay) * 52)}px` }}
+                />
+                <span className={cx('text-[10px] capitalize', isToday ? 'font-semibold text-ink' : 'text-muted')}>{weekdayShort(d.day).slice(0, 3)}</span>
+              </div>
+            )
+          })}
         </div>
       </Card>
 
       {isMe && (
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-3">
           {timerStart ? (
-            <Button onClick={stopTimer} className="!min-h-[64px] col-span-2 bg-salvia-500 hover:bg-salvia-500 text-lg">
-              ⏹ Parar · <span className="font-mono tabular-nums">{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</span>
-            </Button>
+            <button onClick={stopTimer} className="flex w-full items-center justify-between rounded-2xl bg-ink px-5 py-4 text-paper transition active:scale-[0.99]">
+              <span className="text-left">
+                <span className="block text-2xs font-medium uppercase tracking-label text-paper/60">Estudando</span>
+                <span className="figure block text-[36px] leading-none">
+                  {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
+                </span>
+              </span>
+              <span className="flex items-center gap-2 rounded-full bg-paper px-4 py-2 text-sm font-medium text-ink">
+                <Square size={12} className="fill-ink" />
+                Encerrar
+              </span>
+            </button>
           ) : (
-            <>
-              <Button onClick={startTimer} className="!min-h-[64px]">
-                ⏱ Estudar agora
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={startTimer} icon={Timer} size="lg">
+                Cronometrar
               </Button>
               <Button
-                variant="soft"
+                variant="secondary"
+                size="lg"
+                icon={PenLine}
                 onClick={() => {
                   setPrefillMinutes(null)
                   setLogOpen(true)
                 }}
-                className="!min-h-[64px]"
               >
-                ✍️ Registrar
+                Registrar
               </Button>
-            </>
+            </div>
           )}
         </div>
       )}
 
-      <SectionTitle action={isMe && <button onClick={() => setWordOpen(true)} className="text-sm font-bold text-ameixa-600">+ Palavra</button>}>
-        Vocabulário
-      </SectionTitle>
+      <SectionTitle action={isMe && <TextLink onClick={() => setWordOpen(true)}>Nova palavra</TextLink>}>Vocabulário</SectionTitle>
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-2xl font-extrabold">{myCards.length} palavras</p>
-            <p className="text-sm text-tinta/55">
-              {dueCards.length ? `${dueCards.length} para revisar hoje` : myCards.length ? 'Tudo revisado por hoje ✨' : 'Monte seu baralho de palavras novas'}
+            <p className="figure text-[30px] leading-none">{myCards.length}</p>
+            <p className="mt-1.5 text-sm text-muted">
+              {dueCards.length ? `${dueCards.length} para revisar hoje` : myCards.length ? 'Revisão em dia' : 'Nenhuma palavra cadastrada'}
             </p>
           </div>
-          {isMe && dueCards.length > 0 && <Button onClick={() => setReviewing(true)}>Revisar</Button>}
+          {isMe && dueCards.length > 0 && (
+            <Button variant="accent" onClick={() => setReviewing(true)}>
+              Revisar
+            </Button>
+          )}
           {isMe && myCards.length === 0 && (
-            <Button variant="soft" onClick={() => setWordOpen(true)}>
+            <Button variant="secondary" icon={Plus} onClick={() => setWordOpen(true)}>
               Adicionar
             </Button>
           )}
         </div>
         {myCards.length > 0 && (
-          <div className="mt-3 flex gap-1">
-            {[1, 2, 3, 4, 5].map((box) => {
-              const count = myCards.filter((c) => c.box === box).length
-              return (
-                <div key={box} className="flex-1 rounded-lg bg-ameixa-50 py-1.5 text-center">
-                  <p className="text-sm font-extrabold text-ameixa-700">{count}</p>
-                  <p className="text-[10px] text-tinta/50">{['Nova', 'Fraca', 'Média', 'Boa', 'Dominada'][box - 1]}</p>
+          <div className="mt-5">
+            <div className="flex h-1.5 gap-0.5 overflow-hidden rounded-full">
+              {[1, 2, 3, 4, 5].map((box) => {
+                const count = myCards.filter((c) => c.box === box).length
+                return count ? <div key={box} className="h-full" style={{ flex: count, backgroundColor: `rgba(29,28,26,${0.15 + box * 0.17})` }} /> : null
+              })}
+            </div>
+            <div className="mt-3 grid grid-cols-5 text-center">
+              {[1, 2, 3, 4, 5].map((box) => (
+                <div key={box}>
+                  <p className="num text-sm font-medium">{myCards.filter((c) => c.box === box).length}</p>
+                  <p className="text-[10px] text-muted">{BOX_LABELS[box - 1]}</p>
                 </div>
-              )
-            })}
+              ))}
+            </div>
           </div>
         )}
       </Card>
 
       {stats.byLanguage.length > 0 && (
         <>
-          <SectionTitle>Por idioma (últimos 4 meses)</SectionTitle>
-          <div className="grid grid-cols-2 gap-3">
+          <SectionTitle>Idiomas · últimos 4 meses</SectionTitle>
+          <Card className="space-y-3.5">
             {stats.byLanguage.map(([lang, minutes]) => (
-              <Stat key={lang} label={`${languageFlag(lang)} ${lang}`} value={formatDuration(minutes)} tone="ceu" />
+              <div key={lang}>
+                <div className="flex items-center gap-2.5 text-sm">
+                  <LangBadge language={lang} />
+                  <span className="flex-1 font-medium">{lang}</span>
+                  <span className="num text-muted">{formatDuration(minutes)}</span>
+                </div>
+                <Progress value={minutes / totalLang} className="mt-2" />
+              </div>
             ))}
-          </div>
+          </Card>
         </>
       )}
 
       <SectionTitle>Histórico</SectionTitle>
       {mine.length === 0 ? (
-        <EmptyState emoji="📚" title="Nenhum estudo registrado" text="Use o cronômetro ou registre quanto tempo estudou e de que forma." />
+        <EmptyState icon={BookOpen} title="Nenhum estudo registrado" text="Use o cronômetro ou registre quanto tempo estudou e de que forma." />
       ) : (
-        <div className="space-y-2">
+        <Card className="divide-y divide-line !py-0">
           {mine.slice(0, 30).map((s) => {
             const kind = studyKind(s.kind)
+            const Icon = kind.icon
+            const mood = moodLabel(s.mood)
             return (
-              <Card key={s.id} className="!p-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ceu-100 text-xl">{kind.emoji}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">
-                      {languageFlag(s.language)} {s.language} · {kind.label}
+              <div key={s.id} className="flex gap-3.5 py-3.5">
+                <Icon size={18} strokeWidth={1.6} className="mt-0.5 shrink-0 text-muted" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="truncate font-medium">
+                      {kind.label} <span className="font-normal text-muted">· {s.language}</span>
                     </p>
-                    <p className="text-xs text-tinta/55">
-                      {friendlyDay(s.studied_on)} · {formatDuration(s.minutes)} {s.mood ?? ''}
-                    </p>
-                    {s.note && <p className="mt-0.5 text-sm text-tinta/70">{s.note}</p>}
+                    <p className="num shrink-0 text-sm font-medium">{formatDuration(s.minutes)}</p>
                   </div>
+                  <p className="text-xs text-muted">
+                    {friendlyDay(s.studied_on)}
+                    {mood && <span className="normal-case"> · {mood}</span>}
+                  </p>
+                  {s.note && <p className="mt-1 text-sm text-ink-soft">{s.note}</p>}
                 </div>
-              </Card>
+              </div>
             )
           })}
-        </div>
+        </Card>
       )}
 
       <LogSheet
@@ -253,7 +289,7 @@ export default function EstudosPage() {
         onClose={() => setLogOpen(false)}
         onSaved={() => {
           setLogOpen(false)
-          toast('Estudo registrado 📚')
+          toast('Estudo registrado')
           load()
         }}
       />
@@ -280,35 +316,24 @@ export default function EstudosPage() {
 }
 
 function LanguagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [custom, setCustom] = useState(!LANGUAGES.some((l) => l.value === value))
+  const known = LANGUAGES.some((l) => l.value === value)
+  const [custom, setCustom] = useState(!known)
   return (
     <div className="space-y-2">
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        {LANGUAGES.map((l) => (
-          <button
-            key={l.value}
-            type="button"
-            onClick={() => {
-              setCustom(false)
-              onChange(l.value)
-            }}
-            className={cx(
-              'shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold',
-              !custom && value === l.value ? 'bg-tinta text-white' : 'bg-white shadow-suave',
-            )}
-          >
-            {l.flag} {l.value}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setCustom(true)}
-          className={cx('shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold', custom ? 'bg-tinta text-white' : 'bg-white shadow-suave')}
-        >
-          🌍 Outro
-        </button>
-      </div>
-      {custom && <Input value={LANGUAGES.some((l) => l.value === value) ? '' : value} onChange={(e) => onChange(e.target.value)} placeholder="Qual idioma?" />}
+      <Chips
+        options={[...LANGUAGES.map((l) => ({ value: l.value, label: l.value })), { value: '__outro', label: 'Outro' }]}
+        value={custom ? '__outro' : value}
+        onChange={(v) => {
+          if (v === '__outro') {
+            setCustom(true)
+            onChange('')
+          } else {
+            setCustom(false)
+            onChange(v)
+          }
+        }}
+      />
+      {custom && <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Qual idioma?" />}
     </div>
   )
 }
@@ -346,8 +371,8 @@ function LogSheet({
 
   async function save() {
     const m = Number(minutes)
-    if (!language.trim()) return setError('Qual idioma?')
-    if (!m || m <= 0) return setError('Quantos minutos?')
+    if (!language.trim()) return setError('Informe o idioma.')
+    if (!m || m <= 0) return setError('Informe quantos minutos.')
     const { error } = await supabaseBrowser()
       .from('study_sessions')
       .insert({ language: language.trim(), kind, minutes: m, studied_on: day, mood, note: note.trim() || null })
@@ -357,41 +382,41 @@ function LogSheet({
 
   return (
     <Sheet open={open} onClose={onClose} title="Registrar estudo">
-      <div className="space-y-5">
+      <div className="space-y-6">
         <div>
-          <p className="mb-2 text-sm font-semibold text-tinta/80">Idioma</p>
+          <Label>Idioma</Label>
           <LanguagePicker value={language} onChange={setLanguage} />
         </div>
         <div>
-          <p className="mb-2 text-sm font-semibold text-tinta/80">O que você estudou?</p>
+          <Label>Atividade</Label>
           <Choice options={STUDY_KINDS} value={kind} onChange={setKind} columns={4} />
         </div>
         <div>
-          <p className="mb-2 text-sm font-semibold text-tinta/80">Por quanto tempo?</p>
-          <div className="flex flex-wrap items-center gap-2">
-            {['10', '15', '20', '30', '45', '60'].map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMinutes(m)}
-                className={cx('h-11 rounded-xl px-3.5 text-sm font-bold', minutes === m ? 'bg-ameixa-600 text-white' : 'bg-white shadow-suave')}
-              >
-                {m} min
-              </button>
-            ))}
-            <Input inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ''))} className="!w-24 text-center" aria-label="Minutos" />
+          <Label>Duração</Label>
+          <div className="flex items-center gap-3">
+            <Input
+              inputMode="numeric"
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ''))}
+              className="figure !w-24 text-center !text-2xl"
+              aria-label="Minutos"
+            />
+            <span className="text-sm text-muted">minutos</span>
+          </div>
+          <div className="mt-3">
+            <Chips options={['10', '15', '20', '30', '45', '60'].map((m) => ({ value: m, label: `${m} min` }))} value={minutes} onChange={setMinutes} wrap />
           </div>
         </div>
         <Field label="Dia">
           <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} />
         </Field>
         <div>
-          <p className="mb-2 text-sm font-semibold text-tinta/80">Como foi?</p>
-          <Choice options={MOODS} value={mood} onChange={setMood} columns={5} size="sm" />
+          <Label>Como foi</Label>
+          <Chips options={MOODS} value={mood} onChange={setMood} wrap />
         </div>
-        <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que aprendeu? Ex.: past perfect, episódio 3 de Friends…" />
+        <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="O que você estudou? Ex.: past perfect, episódio 3 de Friends…" />
         <ErrorNote message={error} />
-        <Button block onClick={save}>
+        <Button block size="lg" onClick={save}>
           Salvar
         </Button>
       </div>
@@ -429,21 +454,24 @@ function WordSheet({ open, defaultLanguage, onClose, onSaved }: { open: boolean;
 
   return (
     <Sheet open={open} onClose={onClose} title="Nova palavra">
-      <div className="space-y-4">
-        <LanguagePicker value={language} onChange={setLanguage} />
+      <div className="space-y-5">
+        <div>
+          <Label>Idioma</Label>
+          <LanguagePicker value={language} onChange={setLanguage} />
+        </div>
         <Field label="Palavra ou expressão">
           <Input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Ex.: to look forward to" autoCapitalize="none" />
         </Field>
         <Field label="Tradução">
-          <Input value={translation} onChange={(e) => setTranslation(e.target.value)} placeholder="Ex.: estar ansiosa(o) por" />
+          <Input value={translation} onChange={(e) => setTranslation(e.target.value)} placeholder="Ex.: aguardar com expectativa" />
         </Field>
-        <Field label="Exemplo (opcional)">
-          <Input value={example} onChange={(e) => setExample(e.target.value)} placeholder="I'm looking forward to our trip!" />
+        <Field label="Frase de exemplo">
+          <Input value={example} onChange={(e) => setExample(e.target.value)} placeholder="Opcional" />
         </Field>
         <ErrorNote message={error} />
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="soft" onClick={() => save(true)}>
-            Salvar e outra
+          <Button variant="secondary" onClick={() => save(true)}>
+            Salvar e continuar
           </Button>
           <Button onClick={() => save(false)}>Salvar</Button>
         </div>
@@ -452,7 +480,7 @@ function WordSheet({ open, defaultLanguage, onClose, onSaved }: { open: boolean;
   )
 }
 
-/** Revisão estilo flashcard com caixas de Leitner. */
+/** Revisão em flashcards com caixas de Leitner. */
 function Review({ cards, onClose }: { cards: VocabCard[]; onClose: () => void }) {
   const [queue] = useState(() => cards.slice().sort(() => Math.random() - 0.5))
   const [index, setIndex] = useState(0)
@@ -470,61 +498,54 @@ function Review({ cards, onClose }: { cards: VocabCard[]; onClose: () => void })
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-creme px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
+    <div className="fixed inset-0 z-50 flex flex-col bg-paper px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
         <div className="flex items-center justify-between">
-          <button onClick={onClose} className="text-sm font-semibold text-tinta/50">
-            Fechar
+          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-sunken text-muted" aria-label="Fechar">
+            <X size={18} strokeWidth={1.75} />
           </button>
-          <span className="text-sm font-bold text-tinta/50">
-            {Math.min(index + 1, queue.length)} / {queue.length}
+          <span className="num text-sm text-muted">
+            {Math.min(index + 1, queue.length)} de {queue.length}
           </span>
         </div>
-        <Progress value={index / queue.length} className="mt-3" />
+        <Progress value={index / queue.length} tone="accent" className="mt-4" />
 
         {card ? (
           <>
-            <button
-              onClick={() => setRevealed(true)}
-              className="mt-8 flex flex-1 flex-col items-center justify-center rounded-3xl bg-white p-6 text-center shadow-suave"
-            >
-              <p className="text-sm font-semibold text-tinta/45">
-                {languageFlag(card.language)} {card.language}
-              </p>
-              <p className="mt-3 text-3xl font-extrabold">{card.term}</p>
-              {revealed ? (
-                <div className="mt-6 animate-fade">
-                  <p className="text-xl font-bold text-ameixa-600">{card.translation}</p>
-                  {card.example && <p className="mt-3 text-sm italic text-tinta/60">“{card.example}”</p>}
-                </div>
-              ) : (
-                <p className="mt-6 text-sm text-tinta/40">Toque para ver a tradução</p>
-              )}
+            <button onClick={() => setRevealed(true)} className="mt-6 flex flex-1 flex-col justify-center rounded-3xl border border-line bg-surface p-8 text-left">
+              <LangBadge language={card.language} className="self-start" />
+              <p className="mt-6 font-serif text-[44px] leading-[1.05]">{card.term}</p>
+              <div className={cx('mt-8 border-t border-line pt-6 transition-opacity duration-300', revealed ? 'opacity-100' : 'opacity-0')}>
+                <p className="text-xl font-medium">{card.translation}</p>
+                {card.example && <p className="mt-3 font-serif text-lg italic text-muted">“{card.example}”</p>}
+              </div>
+              {!revealed && <p className="mt-2 text-sm text-faint">Toque para revelar</p>}
             </button>
             {revealed ? (
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <Button variant="danger" onClick={() => answer(false)} className="!min-h-[60px] text-lg">
-                  😬 Errei
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Button variant="secondary" size="lg" onClick={() => answer(false)}>
+                  Não lembrei
                 </Button>
-                <Button onClick={() => answer(true)} className="!min-h-[60px] bg-salvia-500 text-lg hover:bg-salvia-500">
-                  😎 Acertei
+                <Button size="lg" onClick={() => answer(true)}>
+                  Lembrei
                 </Button>
               </div>
             ) : (
-              <Button block onClick={() => setRevealed(true)} className="mt-4 !min-h-[60px] text-lg" variant="soft">
-                Mostrar resposta
+              <Button block size="lg" variant="secondary" onClick={() => setRevealed(true)} className="mt-4">
+                Mostrar tradução
               </Button>
             )}
           </>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <span className="animate-pop text-7xl">🏅</span>
-            <p className="mt-4 text-2xl font-extrabold">Revisão concluída!</p>
-            <p className="mt-1 text-tinta/60">
-              Acertou {right} de {queue.length}
+          <div className="flex flex-1 animate-rise flex-col justify-center">
+            <p className="text-2xs font-medium uppercase tracking-label text-muted">Revisão concluída</p>
+            <p className="mt-2 font-serif text-[52px] leading-none">
+              {right}
+              <span className="text-faint">/{queue.length}</span>
             </p>
-            <Button className="mt-8" onClick={onClose}>
-              Voltar
+            <p className="mt-3 text-muted">palavras lembradas. As que ficaram para trás voltam amanhã.</p>
+            <Button size="lg" className="mt-10" onClick={onClose}>
+              Concluir
             </Button>
           </div>
         )}

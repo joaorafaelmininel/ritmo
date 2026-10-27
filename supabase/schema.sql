@@ -20,7 +20,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   household_id uuid references public.households (id) on delete set null,
   display_name text not null default 'Eu',
-  avatar text not null default '🙂',
+  avatar text not null default 'clay',  -- cor do monograma
   weekly_study_goal_minutes int not null default 150,
   daily_water_goal int not null default 8,
   created_at timestamptz not null default now()

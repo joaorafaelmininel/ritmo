@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase/client'
 import { Button, ErrorNote, Field, Input } from '@/components/ui'
+import { Wordmark } from '@/components/Wordmark'
 
 export default function EntrarPage() {
   const router = useRouter()
@@ -33,52 +34,52 @@ export default function EntrarPage() {
       })
       if (error) setError(error.message)
       else if (data.session) router.replace('/bem-vindo')
-      else setInfo('Enviamos um link de confirmação para o seu e-mail. Depois é só entrar.')
+      else setInfo('Enviamos um link de confirmação para o seu e-mail. Depois de confirmar, é só entrar.')
     }
     setLoading(false)
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-ameixa-600 text-4xl shadow-lg shadow-ameixa-600/30">💞</div>
-        <h1 className="text-3xl font-extrabold">Nós Dois</h1>
-        <p className="mt-1 text-tinta/60">Treinos, dieta, gastos, perfumes e estudos — tudo num lugar só.</p>
+    <main className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pb-10 pt-[calc(4rem+env(safe-area-inset-top))]">
+      <div className="flex-1">
+        <Wordmark className="text-[56px] leading-none" />
+        <p className="mt-4 max-w-[17rem] text-[15px] leading-relaxed text-muted">
+          Treinos, alimentação, finanças, perfumes e estudos. A rotina de vocês dois, organizada num só lugar.
+        </p>
+
+        <form onSubmit={submit} className="mt-12 space-y-5">
+          {mode === 'cadastro' && (
+            <Field label="Seu nome">
+              <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="given-name" required />
+            </Field>
+          )}
+          <Field label="E-mail">
+            <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </Field>
+          <Field label="Senha" hint={mode === 'cadastro' ? 'Mínimo de 6 caracteres.' : undefined}>
+            <Input
+              type="password"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </Field>
+          <ErrorNote message={error} />
+          {info && <p className="rounded-xl bg-good-soft px-3.5 py-2.5 text-sm text-good">{info}</p>}
+          <Button type="submit" block size="lg" disabled={loading}>
+            {loading ? 'Aguarde…' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+          </Button>
+        </form>
       </div>
 
-      <form onSubmit={submit} className="space-y-4">
-        {mode === 'cadastro' && (
-          <Field label="Como quer ser chamada(o)?">
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Ana" required />
-          </Field>
-        )}
-        <Field label="E-mail">
-          <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </Field>
-        <Field label="Senha">
-          <Input
-            type="password"
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </Field>
-        <ErrorNote message={error} />
-        {info && <p className="rounded-xl bg-salvia-100 px-3 py-2 text-sm font-medium text-salvia-500">{info}</p>}
-        <Button type="submit" block disabled={loading}>
-          {loading ? 'Um instante…' : mode === 'login' ? 'Entrar' : 'Criar conta'}
-        </Button>
-      </form>
-
-      <button
-        type="button"
-        onClick={() => setMode(mode === 'login' ? 'cadastro' : 'login')}
-        className="mt-6 text-center text-sm font-semibold text-ameixa-600"
-      >
-        {mode === 'login' ? 'Ainda não tem conta? Cadastre-se' : 'Já tenho conta'}
-      </button>
+      <p className="mt-10 text-center text-sm text-muted">
+        {mode === 'login' ? 'Ainda não tem conta?' : 'Já tem uma conta?'}{' '}
+        <button type="button" onClick={() => setMode(mode === 'login' ? 'cadastro' : 'login')} className="font-medium text-ink underline decoration-line underline-offset-4">
+          {mode === 'login' ? 'Criar conta' : 'Entrar'}
+        </button>
+      </p>
     </main>
   )
 }

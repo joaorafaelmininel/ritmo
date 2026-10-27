@@ -16,6 +16,7 @@ Os dados de vocês dois ficam sincronizados: cada um tem seu login, e os dois en
 ## Tecnologia
 
 - Next.js 14 (App Router) + TypeScript + Tailwind CSS
+- Visual: Instrument Serif nos títulos, Inter na interface (fontes embutidas, sem depender do Google Fonts) e ícones Lucide
 - Supabase: login, banco Postgres com Row Level Security (cada casa só enxerga os próprios dados) e Storage privado para as fotos das notas
 - API do Claude (`claude-opus-5-5`) para ler as notas fiscais, chamada só no servidor (`src/app/api/notas/route.ts`)
 

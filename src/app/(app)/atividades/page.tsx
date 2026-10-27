@@ -1,10 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Check, ListChecks } from 'lucide-react'
 import { supabaseBrowser } from '@/lib/supabase/client'
-import { PersonPicker, useHousehold } from '@/components/HouseholdProvider'
+import { PersonMark, PersonPicker, useHousehold } from '@/components/HouseholdProvider'
 import { useToast } from '@/components/Toast'
-import { Button, Card, Choice, EmptyState, ErrorNote, Fab, Field, Input, PageHeader, Pills, SectionTitle, Sheet, Spinner, Textarea, cx } from '@/components/ui'
+import { Button, Card, Choice, EmptyState, ErrorNote, Fab, Field, Input, Label, PageHeader, SectionTitle, Segmented, Sheet, Spinner, Textarea, cx } from '@/components/ui'
 import { ACTIVITY_CATEGORIES } from '@/lib/constants'
 import { addDays, friendlyDay, isoDay } from '@/lib/format'
 import type { Activity } from '@/lib/types'
@@ -12,7 +13,7 @@ import type { Activity } from '@/lib/types'
 type Filter = 'todas' | 'minhas' | 'feitas'
 
 export default function AtividadesPage() {
-  const { me, avatarOf, nameOf } = useHousehold()
+  const { me } = useHousehold()
   const toast = useToast()
   const [activities, setActivities] = useState<Activity[] | null>(null)
   const [filter, setFilter] = useState<Filter>('todas')
@@ -46,7 +47,7 @@ export default function AtividadesPage() {
     return [
       { title: 'Atrasadas', items: list.filter((a) => a.due_on && a.due_on < today) },
       { title: 'Hoje', items: list.filter((a) => a.due_on === today) },
-      { title: 'Próximos dias', items: list.filter((a) => a.due_on && a.due_on > today && a.due_on <= weekEnd) },
+      { title: 'Próximos 7 dias', items: list.filter((a) => a.due_on && a.due_on > today && a.due_on <= weekEnd) },
       { title: 'Mais adiante', items: list.filter((a) => a.due_on && a.due_on > weekEnd) },
       { title: 'Sem data', items: list.filter((a) => !a.due_on) },
     ].filter((g) => g.items.length)
@@ -59,57 +60,58 @@ export default function AtividadesPage() {
       .from('activities')
       .update({ done, done_at: done ? new Date().toISOString() : null })
       .eq('id', a.id)
-    if (done) toast('Feito! ✅')
+    if (done) toast('Concluída')
   }
 
   if (!activities) return <Spinner />
 
   return (
     <>
-      <PageHeader title="Atividades" subtitle="Tarefas e compromissos do casal" back="/mais" />
-      <Pills
+      <PageHeader eyebrow="Agenda" title="Atividades" back="/mais" />
+      <Segmented
         options={[
           { value: 'todas', label: 'Pendentes' },
           { value: 'minhas', label: 'Minhas' },
           { value: 'feitas', label: 'Concluídas' },
         ]}
         value={filter}
-        onChange={(v) => setFilter(v as Filter)}
+        onChange={setFilter}
       />
 
       {groups.length === 0 ? (
         <div className="mt-6">
-          <EmptyState emoji="🗓️" title="Nada pendente" text="Anote compromissos, tarefas da casa, consultas, aniversários…" />
+          <EmptyState icon={ListChecks} title="Nada pendente" text="Registre compromissos, tarefas da casa, consultas e datas importantes." />
         </div>
       ) : (
         groups.map((g) => (
           <div key={g.title}>
             <SectionTitle>
-              <span className={cx(g.title === 'Atrasadas' && 'text-rosa-500')}>{g.title}</span>
+              <span className={cx(g.title === 'Atrasadas' && 'text-bad')}>
+                {g.title} · {g.items.length}
+              </span>
             </SectionTitle>
-            <Card className="divide-y divide-black/5 !py-1">
+            <Card className="divide-y divide-line !py-0">
               {g.items.map((a) => {
                 const cat = ACTIVITY_CATEGORIES.find((c) => c.value === a.category)
                 return (
-                  <div key={a.id} className="flex items-center gap-3 py-3">
+                  <div key={a.id} className="flex items-center gap-3.5 py-3.5">
                     <button
                       onClick={() => toggle(a)}
-                      aria-label={a.done ? 'Desmarcar' : 'Concluir'}
+                      aria-label={a.done ? 'Reabrir' : 'Concluir'}
                       className={cx(
-                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold transition',
-                        a.done ? 'border-salvia-500 bg-salvia-500 text-white' : 'border-black/20',
+                        'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition',
+                        a.done ? 'border-good bg-good text-white' : 'border-faint hover:border-ink',
                       )}
                     >
-                      {a.done && '✓'}
+                      {a.done && <Check size={13} strokeWidth={3} />}
                     </button>
                     <button onClick={() => setEditing(a)} className="min-w-0 flex-1 text-left">
-                      <p className={cx('truncate font-semibold', a.done && 'text-tinta/40 line-through')}>{a.title}</p>
-                      <p className="truncate text-xs text-tinta/50">
-                        {[cat && `${cat.emoji} ${cat.label}`, a.due_on && friendlyDay(a.due_on), a.due_time?.slice(0, 5), `${avatarOf(a.assigned_to)} ${nameOf(a.assigned_to)}`]
-                          .filter(Boolean)
-                          .join(' · ')}
+                      <p className={cx('truncate', a.done && 'text-faint line-through')}>{a.title}</p>
+                      <p className="num truncate text-xs text-muted">
+                        {[cat?.label, a.due_on && friendlyDay(a.due_on), a.due_time?.slice(0, 5)].filter(Boolean).join(' · ')}
                       </p>
                     </button>
+                    <PersonMark id={a.assigned_to} size={22} />
                   </div>
                 )
               })}
@@ -154,7 +156,7 @@ function ActivitySheet({ activity, onClose, onSaved }: { activity: Activity | 'n
   }, [activity])
 
   async function save() {
-    if (!title.trim()) return setError('O que precisa ser feito?')
+    if (!title.trim()) return setError('Descreva a atividade.')
     const data = {
       title: title.trim(),
       notes: notes.trim() || null,
@@ -178,9 +180,14 @@ function ActivitySheet({ activity, onClose, onSaved }: { activity: Activity | 'n
 
   return (
     <Sheet open={!!activity} onClose={onClose} title={isNew ? 'Nova atividade' : 'Editar atividade'}>
-      <div className="space-y-4">
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Levar o carro na revisão" autoFocus={isNew} />
-        <Choice options={ACTIVITY_CATEGORIES} value={category} onChange={setCategory} columns={3} size="sm" />
+      <div className="space-y-6">
+        <Field label="O que precisa ser feito">
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Levar o carro na revisão" autoFocus={isNew} />
+        </Field>
+        <div>
+          <Label>Categoria</Label>
+          <Choice options={ACTIVITY_CATEGORIES} value={category} onChange={setCategory} columns={3} />
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Data">
             <Input type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
@@ -190,17 +197,19 @@ function ActivitySheet({ activity, onClose, onSaved }: { activity: Activity | 'n
           </Field>
         </div>
         <div>
-          <p className="mb-1.5 text-sm font-semibold text-tinta/80">Responsável</p>
+          <Label>Responsável</Label>
           <PersonPicker value={assignedTo} onChange={setAssignedTo} allowBoth />
         </div>
-        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalhes (opcional)" />
+        <Field label="Detalhes">
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Opcional" />
+        </Field>
         <ErrorNote message={error} />
-        <Button block onClick={save}>
+        <Button block size="lg" onClick={save}>
           Salvar
         </Button>
         {!isNew && (
-          <Button block variant="ghost" onClick={remove}>
-            Excluir
+          <Button block variant="danger" onClick={remove}>
+            Excluir atividade
           </Button>
         )}
       </div>

@@ -1,18 +1,20 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Flower2, Heart, Plus, Star } from 'lucide-react'
 import { supabaseBrowser } from '@/lib/supabase/client'
-import { useHousehold } from '@/components/HouseholdProvider'
+import { PersonSwitch, useHousehold } from '@/components/HouseholdProvider'
 import { useToast } from '@/components/Toast'
-import { Button, Card, Choice, EmptyState, ErrorNote, Field, Input, PageHeader, Pills, SectionTitle, Select, Sheet, Spinner, Stat, Textarea, cx } from '@/components/ui'
-import { OCCASIONS, PERFUME_CONCENTRATIONS, PERFUME_FAMILIES, WEATHER, perfumeEmoji } from '@/lib/constants'
+import { Button, Card, Chips, Choice, EmptyState, ErrorNote, Field, Input, Label, Metric, PageHeader, SectionTitle, Segmented, Select, Sheet, Spinner, Textarea, cx } from '@/components/ui'
+import { OCCASIONS, PERFUME_CONCENTRATIONS, PERFUME_FAMILIES, WEATHER, familyColor } from '@/lib/constants'
 import { daysSince, friendlyDay, isoDay, sinceLabel } from '@/lib/format'
 import type { Perfume, PerfumeWear } from '@/lib/types'
 
 type Tab = 'colecao' | 'diario' | 'resumo'
+type Usage = Map<string, { count: number; last: string; compliments: number }>
 
 export default function PerfumesPage() {
-  const { me, members } = useHousehold()
+  const { me } = useHousehold()
   const toast = useToast()
   const [owner, setOwner] = useState(me.id)
   const [tab, setTab] = useState<Tab>('colecao')
@@ -41,7 +43,7 @@ export default function PerfumesPage() {
   const todayWears = myWears.filter((w) => w.worn_on === isoDay())
 
   const usage = useMemo(() => {
-    const map = new Map<string, { count: number; last: string; compliments: number }>()
+    const map: Usage = new Map()
     for (const w of myWears) {
       const u = map.get(w.perfume_id) ?? { count: 0, last: w.worn_on, compliments: 0 }
       u.count++
@@ -65,86 +67,96 @@ export default function PerfumesPage() {
 
   return (
     <>
-      <PageHeader title="Perfumes" subtitle="Coleção e diário de fragrâncias" back="/mais" />
-
-      {members.length > 1 && (
-        <div className="mb-4">
-          <Pills options={members.map((m) => ({ value: m.id, label: `${m.avatar} ${m.display_name}` }))} value={owner} onChange={setOwner} />
-        </div>
-      )}
+      <PageHeader eyebrow="Fragrâncias" title="Perfumes" back="/mais" />
+      <PersonSwitch value={owner} onChange={setOwner} />
 
       {/* Perfume de hoje */}
-      <Card className="bg-gradient-to-br from-rosa-100 to-ameixa-50">
-        <p className="text-sm font-semibold text-tinta/60">{isMe ? 'Seu perfume de hoje' : 'Perfume de hoje'}</p>
+      <div className="rounded-2xl border border-line bg-surface p-5">
+        <p className="text-2xs font-medium uppercase tracking-label text-muted">{isMe ? 'Seu perfume hoje' : 'Perfume de hoje'}</p>
         {todayWears.length > 0 ? (
           <div className="mt-2 space-y-1">
-            {todayWears.map((w) => (
-              <p key={w.id} className="text-xl font-extrabold">
-                {perfumeEmoji(byId.get(w.perfume_id)?.family ?? null)} {byId.get(w.perfume_id)?.name ?? 'Perfume'}
-                <span className="ml-2 text-sm font-medium text-tinta/50">{[w.occasion, w.compliment && '😍 elogiado'].filter(Boolean).join(' · ')}</span>
-              </p>
-            ))}
+            {todayWears.map((w) => {
+              const p = byId.get(w.perfume_id)
+              return (
+                <div key={w.id}>
+                  <p className="font-serif text-[32px] leading-tight">{p?.name ?? 'Perfume'}</p>
+                  <p className="text-sm text-muted">{[p?.brand, w.occasion, w.compliment && 'recebeu elogio'].filter(Boolean).join(' · ')}</p>
+                </div>
+              )
+            })}
           </div>
         ) : (
-          <p className="mt-1 text-xl font-extrabold">{isMe ? 'Qual perfume você usou hoje?' : 'Nenhum registro hoje'}</p>
+          <p className="mt-2 font-serif text-[32px] leading-tight text-ink-soft">{isMe ? 'Qual você escolheu hoje?' : 'Nenhum registro hoje'}</p>
         )}
         {isMe && (
-          <Button className="mt-3" onClick={() => setWearOpen(true)} disabled={collection.length === 0}>
-            {todayWears.length ? '+ Registrar outro' : '🌸 Registrar perfume'}
+          <Button className="mt-4" variant={todayWears.length ? 'secondary' : 'primary'} icon={Plus} onClick={() => setWearOpen(true)} disabled={collection.length === 0}>
+            {todayWears.length ? 'Registrar outro' : 'Registrar perfume'}
           </Button>
         )}
-        {isMe && collection.length === 0 && <p className="mt-2 text-xs text-tinta/50">Cadastre seus perfumes na coleção primeiro.</p>}
-      </Card>
+        {isMe && collection.length === 0 && <p className="mt-2 text-xs text-muted">Adicione perfumes à coleção para começar.</p>}
+      </div>
 
-      <div className="mt-5">
-        <Pills
+      <div className="mt-6">
+        <Segmented
           options={[
-            { value: 'colecao', label: `Coleção (${collection.length})` },
+            { value: 'colecao', label: `Coleção · ${collection.length}` },
             { value: 'diario', label: 'Diário' },
             { value: 'resumo', label: 'Resumo' },
           ]}
           value={tab}
-          onChange={(v) => setTab(v as Tab)}
+          onChange={setTab}
         />
       </div>
 
       {tab === 'colecao' && (
         <>
           {collection.length === 0 ? (
-            <div className="mt-4">
+            <div className="mt-5">
               <EmptyState
-                emoji="🧴"
-                title="A coleção está vazia"
-                text="Adicione os perfumes que você tem para registrar qual usou em cada dia."
+                icon={Flower2}
+                title="Coleção vazia"
+                text="Cadastre os perfumes que você tem para registrar o uso de cada dia."
                 action={isMe && <Button onClick={() => setEditing('novo')}>Adicionar perfume</Button>}
               />
             </div>
           ) : (
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-5 grid grid-cols-2 gap-3">
               {collection
                 .slice()
                 .sort((a, b) => Number(b.favorite) - Number(a.favorite) || (usage.get(b.id)?.count ?? 0) - (usage.get(a.id)?.count ?? 0))
                 .map((p) => {
                   const u = usage.get(p.id)
+                  const color = familyColor(p.family)
                   return (
-                    <Card key={p.id} className="relative !p-3" onClick={isMe ? () => setEditing(p) : undefined}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (isMe) toggleFavorite(p)
-                        }}
-                        className="absolute right-2 top-2 text-lg"
-                        aria-label="Favorito"
-                      >
-                        {p.favorite ? '❤️' : '🤍'}
-                      </button>
-                      <span className="text-3xl">{perfumeEmoji(p.family)}</span>
-                      <p className="mt-1 line-clamp-2 pr-4 font-bold leading-tight">{p.name}</p>
-                      <p className="truncate text-xs text-tinta/55">{[p.brand, p.concentration].filter(Boolean).join(' · ') || '—'}</p>
-                      {p.family && <span className="mt-2 inline-block rounded-full bg-ameixa-50 px-2 py-0.5 text-[11px] font-semibold text-ameixa-700">{p.family}</span>}
-                      <p className="mt-2 text-[11px] text-tinta/50">
-                        {u ? `Usado ${u.count}× · ${sinceLabel(u.last)}` : 'Ainda não usado'}
-                      </p>
+                    <Card key={p.id} className="relative flex flex-col !p-0" onClick={isMe ? () => setEditing(p) : undefined}>
+                      <div className="relative flex h-24 items-end rounded-t-2xl px-4 pb-3" style={{ backgroundColor: `${color}14` }}>
+                        <span className="font-serif text-[40px] italic leading-none" style={{ color }}>
+                          {(p.brand ?? p.name).slice(0, 1)}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (isMe) toggleFavorite(p)
+                          }}
+                          className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full"
+                          aria-label={p.favorite ? 'Remover dos favoritos' : 'Favoritar'}
+                        >
+                          <Heart size={17} strokeWidth={1.75} className={p.favorite ? 'fill-accent text-accent' : 'text-faint'} />
+                        </button>
+                      </div>
+                      <div className="flex flex-1 flex-col p-4 pt-3">
+                        <p className="line-clamp-2 font-medium leading-snug">{p.name}</p>
+                        <p className="mt-0.5 truncate text-xs text-muted">{[p.brand, p.concentration].filter(Boolean).join(' · ') || '—'}</p>
+                        <div className="mt-auto pt-3">
+                          {p.family && (
+                            <p className="flex items-center gap-1.5 text-xs text-ink-soft">
+                              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                              {p.family}
+                            </p>
+                          )}
+                          <p className="num mt-1 text-xs text-faint">{u ? `${u.count}× · ${sinceLabel(u.last)}` : 'Ainda não usado'}</p>
+                        </div>
+                      </div>
                     </Card>
                   )
                 })}
@@ -153,47 +165,58 @@ export default function PerfumesPage() {
 
           {wishlist.length > 0 && (
             <>
-              <SectionTitle>Quero ter ✨</SectionTitle>
-              <div className="space-y-2">
+              <SectionTitle>Lista de desejos</SectionTitle>
+              <Card className="divide-y divide-line !py-0">
                 {wishlist.map((p) => (
-                  <Card key={p.id} className="!p-3" onClick={isMe ? () => setEditing(p) : undefined}>
-                    <p className="font-semibold">{p.name}</p>
-                    <p className="text-xs text-tinta/55">{[p.brand, p.family].filter(Boolean).join(' · ')}</p>
-                  </Card>
+                  <button key={p.id} className="flex w-full items-center justify-between gap-3 py-3 text-left" onClick={isMe ? () => setEditing(p) : undefined}>
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">{p.name}</span>
+                      <span className="block truncate text-xs text-muted">{[p.brand, p.family].filter(Boolean).join(' · ')}</span>
+                    </span>
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: familyColor(p.family) }} />
+                  </button>
                 ))}
-              </div>
+              </Card>
             </>
           )}
 
           {isMe && collection.length > 0 && (
-            <Button variant="soft" block className="mt-4" onClick={() => setEditing('novo')}>
-              + Adicionar perfume
+            <Button variant="secondary" block icon={Plus} className="mt-5" onClick={() => setEditing('novo')}>
+              Adicionar perfume
             </Button>
           )}
         </>
       )}
 
       {tab === 'diario' && (
-        <div className="mt-4 space-y-2">
+        <div className="mt-5">
           {myWears.length === 0 ? (
-            <EmptyState emoji="📔" title="Diário vazio" text="Cada perfume registrado aparece aqui, dia a dia." />
+            <EmptyState icon={Flower2} title="Diário vazio" text="Cada perfume registrado aparece aqui, dia a dia." />
           ) : (
-            myWears.map((w) => {
-              const weather = WEATHER.find((x) => x.value === w.weather)
-              return (
-                <Card key={w.id} className="!p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-tinta/45">{friendlyDay(w.worn_on)}</p>
-                      <p className="font-bold">{byId.get(w.perfume_id)?.name ?? 'Perfume removido'}</p>
-                      <p className="text-xs text-tinta/55">{[w.occasion, weather && `${weather.emoji} ${weather.label}`, w.compliment && '😍 Recebeu elogio'].filter(Boolean).join(' · ')}</p>
-                      {w.note && <p className="mt-1 text-sm text-tinta/70">“{w.note}”</p>}
-                    </div>
-                    {w.rating && <span className="shrink-0 text-sm">{'⭐'.repeat(w.rating)}</span>}
-                  </div>
-                </Card>
-              )
-            })
+            <ol className="relative ml-1.5 border-l border-line">
+              {myWears.map((w) => {
+                const p = byId.get(w.perfume_id)
+                const weather = WEATHER.find((x) => x.value === w.weather)
+                return (
+                  <li key={w.id} className="relative pb-6 pl-6 last:pb-0">
+                    <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-paper" style={{ backgroundColor: familyColor(p?.family ?? null) }} />
+                    <p className="text-xs font-medium text-muted">{friendlyDay(w.worn_on)}</p>
+                    <p className="mt-0.5 font-serif text-[22px] leading-tight">{p?.name ?? 'Perfume removido'}</p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {[w.occasion, weather?.label, w.compliment && 'Recebeu elogio'].filter(Boolean).join(' · ')}
+                    </p>
+                    {w.rating && (
+                      <span className="mt-1.5 flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <Star key={n} size={12} className={n <= w.rating! ? 'fill-ink text-ink' : 'text-line'} />
+                        ))}
+                      </span>
+                    )}
+                    {w.note && <p className="mt-1.5 text-sm italic text-ink-soft">“{w.note}”</p>}
+                  </li>
+                )
+              })}
+            </ol>
           )}
         </div>
       )}
@@ -208,7 +231,7 @@ export default function PerfumesPage() {
           usage={usage}
           onSaved={() => {
             setWearOpen(false)
-            toast('Perfume registrado 🌸')
+            toast('Perfume registrado')
             load()
           }}
         />
@@ -226,15 +249,7 @@ export default function PerfumesPage() {
   )
 }
 
-function Summary({
-  perfumes,
-  usage,
-  wears,
-}: {
-  perfumes: Perfume[]
-  usage: Map<string, { count: number; last: string; compliments: number }>
-  wears: PerfumeWear[]
-}) {
+function Summary({ perfumes, usage, wears }: { perfumes: Perfume[]; usage: Usage; wears: PerfumeWear[] }) {
   const monthStart = isoDay(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
   const thisMonth = wears.filter((w) => w.worn_on >= monthStart)
   const compliments = wears.filter((w) => w.compliment).length
@@ -243,42 +258,47 @@ function Summary({
     .filter((x) => x.u)
     .sort((a, b) => b.u!.count - a.u!.count)
     .slice(0, 5)
+  const maxCount = ranking[0]?.u?.count ?? 1
   const forgotten = perfumes
     .map((p) => ({ p, days: usage.get(p.id) ? daysSince(usage.get(p.id)!.last) : Infinity }))
     .filter((x) => x.days >= 30)
     .sort((a, b) => b.days - a.days)
-  const champion = perfumes
-    .map((p) => ({ p, c: usage.get(p.id)?.compliments ?? 0 }))
-    .sort((a, b) => b.c - a.c)[0]
+  const champion = perfumes.map((p) => ({ p, c: usage.get(p.id)?.compliments ?? 0 })).sort((a, b) => b.c - a.c)[0]
 
   return (
-    <div className="mt-4 space-y-4">
-      <div className="grid grid-cols-3 gap-2">
-        <Stat label="No mês" value={thisMonth.length} tone="rosa" />
-        <Stat label="Elogios" value={compliments} tone="mel" />
-        <Stat label="Na coleção" value={perfumes.length} tone="ameixa" />
-      </div>
+    <div className="mt-5 space-y-3">
+      <Card className="grid grid-cols-3 divide-x divide-line !px-0">
+        <Metric className="px-4" label="No mês" value={thisMonth.length} detail="usos" />
+        <Metric className="px-4" label="Elogios" value={compliments} detail="no total" />
+        <Metric className="px-4" label="Coleção" value={perfumes.length} detail="perfumes" />
+      </Card>
 
       {champion && champion.c > 0 && (
-        <Card className="bg-mel-100">
-          <p className="text-sm font-semibold text-tinta/60">😍 Campeão de elogios</p>
-          <p className="text-lg font-extrabold">
-            {champion.p.name} <span className="text-sm font-medium text-tinta/60">({champion.c} elogios)</span>
+        <Card>
+          <p className="text-2xs font-medium uppercase tracking-label text-muted">Mais elogiado</p>
+          <p className="mt-1 font-serif text-[28px] leading-tight">{champion.p.name}</p>
+          <p className="text-sm text-muted">
+            {champion.c} {champion.c === 1 ? 'elogio' : 'elogios'}
           </p>
         </Card>
       )}
 
       <Card>
-        <p className="mb-2 font-bold">🏆 Mais usados</p>
+        <p className="mb-4 text-2xs font-medium uppercase tracking-label text-muted">Mais usados</p>
         {ranking.length === 0 ? (
-          <p className="text-sm text-tinta/50">Registre alguns usos para ver o ranking.</p>
+          <p className="text-sm text-muted">Registre alguns usos para ver o ranking.</p>
         ) : (
-          <ol className="space-y-2">
+          <ol className="space-y-3">
             {ranking.map(({ p, u }, i) => (
-              <li key={p.id} className="flex items-center gap-3">
-                <span className="w-5 text-center font-extrabold text-ameixa-600">{i + 1}</span>
-                <span className="min-w-0 flex-1 truncate font-semibold">{p.name}</span>
-                <span className="text-sm text-tinta/60">{u!.count}×</span>
+              <li key={p.id}>
+                <div className="flex items-baseline gap-3 text-sm">
+                  <span className="figure w-4 text-base text-faint">{i + 1}</span>
+                  <span className="min-w-0 flex-1 truncate font-medium">{p.name}</span>
+                  <span className="num text-muted">{u!.count}×</span>
+                </div>
+                <div className="ml-7 mt-1.5 h-1 rounded-full bg-sunken">
+                  <div className="h-full rounded-full" style={{ width: `${(u!.count / maxCount) * 100}%`, backgroundColor: familyColor(p.family) }} />
+                </div>
               </li>
             ))}
           </ol>
@@ -287,13 +307,13 @@ function Summary({
 
       {forgotten.length > 0 && (
         <Card>
-          <p className="mb-1 font-bold">💤 Esquecidos na prateleira</p>
-          <p className="mb-2 text-xs text-tinta/50">Sem uso há mais de 30 dias — que tal dar uma chance?</p>
-          <ul className="space-y-1 text-sm">
+          <p className="text-2xs font-medium uppercase tracking-label text-muted">Esquecidos</p>
+          <p className="mt-1 text-sm text-muted">Sem uso há mais de 30 dias.</p>
+          <ul className="mt-3 divide-y divide-line text-sm">
             {forgotten.map(({ p, days }) => (
-              <li key={p.id} className="flex justify-between">
-                <span className="font-semibold">{p.name}</span>
-                <span className="text-tinta/50">{days === Infinity ? 'nunca usado' : `${days} dias`}</span>
+              <li key={p.id} className="flex justify-between py-2.5">
+                <span className="font-medium">{p.name}</span>
+                <span className="num text-muted">{days === Infinity ? 'nunca usado' : `${days} dias`}</span>
               </li>
             ))}
           </ul>
@@ -313,7 +333,7 @@ function WearSheet({
   open: boolean
   onClose: () => void
   perfumes: Perfume[]
-  usage: Map<string, { count: number; last: string }>
+  usage: Usage
   onSaved: () => void
 }) {
   const [perfumeId, setPerfumeId] = useState<string | null>(null)
@@ -353,26 +373,27 @@ function WearSheet({
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="Qual perfume você usou?">
-      <div className="space-y-5">
-        <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto p-0.5">
-          {sorted.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setPerfumeId(p.id)}
-              className={cx(
-                'rounded-xl border-2 p-3 text-left transition',
-                perfumeId === p.id ? 'border-ameixa-500 bg-ameixa-50' : 'border-transparent bg-white shadow-suave',
-              )}
-            >
-              <p className="line-clamp-2 text-sm font-bold leading-tight">
-                {p.favorite && '❤️ '}
-                {p.name}
-              </p>
-              <p className="truncate text-[11px] text-tinta/50">{p.brand ?? ''}</p>
-            </button>
-          ))}
+    <Sheet open={open} onClose={onClose} title="Perfume do dia">
+      <div className="space-y-6">
+        <div className="max-h-64 divide-y divide-line overflow-y-auto rounded-2xl border border-line bg-surface">
+          {sorted.map((p) => {
+            const active = perfumeId === p.id
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPerfumeId(p.id)}
+                className={cx('flex w-full items-center gap-3 px-4 py-3 text-left transition', active && 'bg-ink text-paper')}
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: familyColor(p.family) }} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{p.name}</span>
+                  <span className={cx('block truncate text-xs', active ? 'text-paper/60' : 'text-muted')}>{p.brand ?? ''}</span>
+                </span>
+                {p.favorite && <Heart size={14} className={active ? 'fill-paper text-paper' : 'fill-accent text-accent'} />}
+              </button>
+            )
+          })}
         </div>
 
         <Field label="Dia">
@@ -380,49 +401,35 @@ function WearSheet({
         </Field>
 
         <div>
-          <p className="mb-2 text-sm font-semibold text-tinta/80">Ocasião</p>
-          <div className="flex flex-wrap gap-2">
-            {OCCASIONS.map((o) => (
-              <button
-                key={o}
-                type="button"
-                onClick={() => setOccasion(o)}
-                className={cx('rounded-full px-3.5 py-2 text-sm font-semibold', occasion === o ? 'bg-tinta text-white' : 'bg-white shadow-suave')}
-              >
-                {o}
-              </button>
-            ))}
-          </div>
+          <Label>Ocasião</Label>
+          <Chips options={OCCASIONS.map((o) => ({ value: o, label: o }))} value={occasion} onChange={setOccasion} wrap />
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-semibold text-tinta/80">Clima</p>
-          <Choice options={WEATHER} value={weather} onChange={setWeather} columns={4} size="sm" />
+          <Label>Clima</Label>
+          <Choice options={WEATHER} value={weather} onChange={setWeather} columns={4} />
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-semibold text-tinta/80">Como ficou? (opcional)</p>
+          <Label>Avaliação</Label>
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" onClick={() => setRating(rating === n ? null : n)} className="text-3xl transition active:scale-90">
-                {rating && n <= rating ? '⭐' : '☆'}
+              <button key={n} type="button" onClick={() => setRating(rating === n ? null : n)} className="p-1 transition active:scale-90" aria-label={`${n} estrelas`}>
+                <Star size={26} strokeWidth={1.5} className={rating && n <= rating ? 'fill-ink text-ink' : 'text-line'} />
               </button>
             ))}
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setCompliment(!compliment)}
-          className={cx('flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left font-semibold', compliment ? 'border-rosa-500 bg-rosa-100' : 'border-transparent bg-white shadow-suave')}
-        >
-          <span className="text-2xl">{compliment ? '😍' : '🙂'}</span>
-          Recebi elogio pelo perfume
-        </button>
+        <label className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3.5">
+          <span className="font-medium">Recebi elogio</span>
+          <input type="checkbox" checked={compliment} onChange={(e) => setCompliment(e.target.checked)} className="peer sr-only" />
+          <span className="relative h-6 w-10 rounded-full bg-line transition peer-checked:bg-accent after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-4" />
+        </label>
 
-        <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anotação (fixação, quem elogiou…)" />
+        <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anotação: fixação, quem elogiou…" />
         <ErrorNote message={error} />
-        <Button block onClick={save} disabled={saving}>
+        <Button block size="lg" onClick={save} disabled={saving}>
           {saving ? 'Salvando…' : 'Registrar'}
         </Button>
       </div>
@@ -454,7 +461,7 @@ function PerfumeSheet({ perfume, onClose, onSaved }: { perfume: Perfume | 'novo'
   const isNew = perfume === 'novo'
 
   async function save() {
-    if (!name.trim()) return setError('Qual o nome do perfume?')
+    if (!name.trim()) return setError('Informe o nome do perfume.')
     const data = {
       name: name.trim(),
       brand: brand.trim() || null,
@@ -466,13 +473,13 @@ function PerfumeSheet({ perfume, onClose, onSaved }: { perfume: Perfume | 'novo'
     const supabase = supabaseBrowser()
     const { error } = isNew ? await supabase.from('perfumes').insert(data) : await supabase.from('perfumes').update(data).eq('id', (perfume as Perfume).id)
     if (error) return setError(error.message)
-    toast(isNew ? 'Perfume adicionado 🧴' : 'Perfume atualizado')
+    toast(isNew ? 'Perfume adicionado' : 'Perfume atualizado')
     onSaved()
   }
 
   async function remove() {
     if (!perfume || perfume === 'novo') return
-    if (!confirm(`Remover "${perfume.name}" e todo o histórico de uso dele?`)) return
+    if (!confirm(`Remover "${perfume.name}" e todo o histórico de uso?`)) return
     await supabaseBrowser().from('perfumes').delete().eq('id', perfume.id)
     toast('Perfume removido')
     onSaved()
@@ -480,7 +487,7 @@ function PerfumeSheet({ perfume, onClose, onSaved }: { perfume: Perfume | 'novo'
 
   return (
     <Sheet open={!!perfume} onClose={onClose} title={isNew ? 'Novo perfume' : 'Editar perfume'}>
-      <div className="space-y-4">
+      <div className="space-y-5">
         <Field label="Nome">
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: La Vie Est Belle" />
         </Field>
@@ -508,16 +515,20 @@ function PerfumeSheet({ perfume, onClose, onSaved }: { perfume: Perfume | 'novo'
         <Field label="Notas olfativas">
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex.: íris, pralinê, baunilha" />
         </Field>
-        <label className="flex items-center gap-3 rounded-xl bg-white p-3 font-semibold shadow-suave">
-          <input type="checkbox" checked={wishlist} onChange={(e) => setWishlist(e.target.checked)} className="h-5 w-5 accent-ameixa-600" />
-          Ainda não tenho — está na lista de desejos
+        <label className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3.5">
+          <span>
+            <span className="block font-medium">Lista de desejos</span>
+            <span className="block text-xs text-muted">Ainda não tenho este perfume</span>
+          </span>
+          <input type="checkbox" checked={wishlist} onChange={(e) => setWishlist(e.target.checked)} className="peer sr-only" />
+          <span className="relative h-6 w-10 shrink-0 rounded-full bg-line transition peer-checked:bg-accent after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-4" />
         </label>
         <ErrorNote message={error} />
-        <Button block onClick={save}>
+        <Button block size="lg" onClick={save}>
           Salvar
         </Button>
         {!isNew && (
-          <Button block variant="ghost" onClick={remove}>
+          <Button block variant="danger" onClick={remove}>
             Remover perfume
           </Button>
         )}

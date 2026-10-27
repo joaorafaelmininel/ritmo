@@ -2,14 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { BookOpen, Dumbbell, LayoutGrid, Sun, Wallet } from 'lucide-react'
 import { cx } from './ui'
 
 const ITEMS = [
-  { href: '/', label: 'Início', emoji: '🏠' },
-  { href: '/treinos', label: 'Treinos', emoji: '💪' },
-  { href: '/gastos', label: 'Gastos', emoji: '💸' },
-  { href: '/estudos', label: 'Estudos', emoji: '📚' },
-  { href: '/mais', label: 'Mais', emoji: '✨' },
+  { href: '/', label: 'Hoje', icon: Sun },
+  { href: '/treinos', label: 'Treinos', icon: Dumbbell },
+  { href: '/gastos', label: 'Gastos', icon: Wallet },
+  { href: '/estudos', label: 'Estudos', icon: BookOpen },
+  { href: '/mais', label: 'Mais', icon: LayoutGrid },
 ]
 
 const MORE_PATHS = ['/mais', '/dieta', '/atividades', '/perfumes', '/perfil']
@@ -23,18 +24,15 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-black/5 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg">
-      <ul className="mx-auto flex max-w-lg justify-around">
-        {ITEMS.map((item) => {
-          const active = isActive(item.href)
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+      <ul className="mx-auto flex max-w-lg justify-around px-2">
+        {ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = isActive(href)
           return (
-            <li key={item.href} className="flex-1">
-              <Link
-                href={item.href}
-                className={cx('flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-semibold transition', active ? 'text-ameixa-600' : 'text-tinta/45')}
-              >
-                <span className={cx('text-xl transition', active ? 'scale-110' : 'grayscale opacity-70')}>{item.emoji}</span>
-                {item.label}
+            <li key={href} className="flex-1">
+              <Link href={href} className={cx('flex flex-col items-center gap-1 pb-2 pt-2.5 text-2xs font-medium transition', active ? 'text-ink' : 'text-faint hover:text-muted')}>
+                <Icon size={21} strokeWidth={active ? 2 : 1.6} />
+                {label}
               </Link>
             </li>
           )

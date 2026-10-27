@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { ChevronLeft, ChevronRight, Receipt, ScanLine } from 'lucide-react'
 import { supabaseBrowser } from '@/lib/supabase/client'
-import { useHousehold } from '@/components/HouseholdProvider'
+import { PersonMark, useHousehold } from '@/components/HouseholdProvider'
 import { useToast } from '@/components/Toast'
-import { Button, Card, EmptyState, Fab, PageHeader, SectionTitle, Sheet, Spinner } from '@/components/ui'
+import { Button, Card, EmptyState, Fab, IconTile, PageHeader, SectionTitle, Sheet, Spinner } from '@/components/ui'
 import { categoryInfo } from '@/lib/constants'
-import { friendlyDay, isoDay, money } from '@/lib/format'
+import { capFirst, friendlyDay, isoDay, money } from '@/lib/format'
 import type { Expense } from '@/lib/types'
 
 function monthRange(offset: number) {
@@ -17,7 +18,7 @@ function monthRange(offset: number) {
 }
 
 export default function GastosPage() {
-  const { members, nameOf, avatarOf } = useHousehold()
+  const { members, nameOf } = useHousehold()
   const toast = useToast()
   const [offset, setOffset] = useState(0)
   const [expenses, setExpenses] = useState<Expense[] | null>(null)
@@ -72,89 +73,98 @@ export default function GastosPage() {
     toast('Gasto excluído')
   }
 
+  const payers = [...members.map((m) => m.id as string), 'both'].filter((id) => stats.byPerson.get(id))
+
   return (
     <>
-      <PageHeader title="Gastos" subtitle="Para onde está indo o dinheiro" />
+      <PageHeader eyebrow="Finanças" title="Gastos" />
 
-      <Card className="bg-gradient-to-br from-tinta to-ameixa-700 text-white">
-        <div className="flex items-center justify-between">
-          <button onClick={() => setOffset(offset - 1)} className="h-9 w-9 rounded-full text-xl hover:bg-white/10" aria-label="Mês anterior">
-            ‹
-          </button>
-          <p className="text-sm font-semibold capitalize opacity-80">{range.label}</p>
-          <button
-            onClick={() => setOffset(offset + 1)}
-            disabled={offset >= 0}
-            className="h-9 w-9 rounded-full text-xl hover:bg-white/10 disabled:opacity-30"
-            aria-label="Próximo mês"
-          >
-            ›
-          </button>
+      <div className="flex items-center justify-between">
+        <button onClick={() => setOffset(offset - 1)} className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-sunken hover:text-ink" aria-label="Mês anterior">
+          <ChevronLeft size={18} strokeWidth={1.75} />
+        </button>
+        <p className="text-sm font-medium text-ink-soft">{capFirst(range.label)}</p>
+        <button
+          onClick={() => setOffset(offset + 1)}
+          disabled={offset >= 0}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-sunken hover:text-ink disabled:opacity-30"
+          aria-label="Próximo mês"
+        >
+          <ChevronRight size={18} strokeWidth={1.75} />
+        </button>
+      </div>
+
+      <div className="mt-4 text-center">
+        <p className="figure text-[56px] leading-none tracking-[-0.01em]">{money(stats.total)}</p>
+        <p className="mt-2 text-sm text-muted">
+          {expenses?.length ?? 0} {expenses?.length === 1 ? 'lançamento' : 'lançamentos'}
+        </p>
+      </div>
+
+      {members.length > 1 && payers.length > 0 && (
+        <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2">
+          {payers.map((id) => (
+            <span key={id} className="flex items-center gap-2 whitespace-nowrap text-sm">
+              <PersonMark id={id === 'both' ? null : id} size={22} />
+              <span className="text-muted">{nameOf(id === 'both' ? null : id)}</span>
+              <span className="num font-medium">{money(stats.byPerson.get(id))}</span>
+            </span>
+          ))}
         </div>
-        <p className="mt-2 text-center text-4xl font-extrabold tabular-nums">{money(stats.total)}</p>
-        <p className="text-center text-sm opacity-70">{expenses?.length ?? 0} lançamentos</p>
-        {members.length > 1 && stats.total > 0 && (
-          <div className="mt-4 flex justify-center gap-4 text-sm">
-            {[...members.map((m) => m.id), 'both'].map((id) =>
-              stats.byPerson.get(id) ? (
-                <span key={id} className="rounded-full bg-white/10 px-3 py-1">
-                  {avatarOf(id === 'both' ? null : id)} {money(stats.byPerson.get(id))}
-                </span>
-              ) : null,
-            )}
-          </div>
-        )}
-      </Card>
+      )}
 
       {!expenses ? (
         <Spinner />
       ) : expenses.length === 0 ? (
-        <div className="mt-6">
-          <EmptyState emoji="🧾" title="Nenhum gasto neste mês" text="Fotografe uma nota fiscal ou lance um gasto manualmente." />
+        <div className="mt-8">
+          <EmptyState icon={Receipt} title="Nenhum gasto no mês" text="Fotografe uma nota fiscal ou registre um gasto manualmente." />
         </div>
       ) : (
         <>
           <SectionTitle>Por categoria</SectionTitle>
-          <Card className="space-y-3">
-            {stats.categories.map(([cat, value]) => {
-              const info = categoryInfo(cat)
-              return (
-                <div key={cat}>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold">
-                      {info.emoji} {info.label}
-                    </span>
-                    <span className="tabular-nums text-tinta/70">
-                      {money(value)} <span className="text-xs text-tinta/40">· {Math.round((value / stats.total) * 100)}%</span>
-                    </span>
-                  </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/5">
-                    <div className="h-full rounded-full bg-ameixa-500" style={{ width: `${(value / stats.categories[0][1]) * 100}%` }} />
-                  </div>
-                </div>
-              )
-            })}
+          <Card>
+            <div className="flex h-2 overflow-hidden rounded-full">
+              {stats.categories.map(([cat, value]) => (
+                <div key={cat} style={{ width: `${(value / stats.total) * 100}%`, backgroundColor: categoryInfo(cat).color }} className="h-full first:rounded-l-full last:rounded-r-full" />
+              ))}
+            </div>
+            <ul className="mt-4 space-y-2.5">
+              {stats.categories.map(([cat, value]) => {
+                const info = categoryInfo(cat)
+                return (
+                  <li key={cat} className="flex items-center gap-3 text-sm">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: info.color }} />
+                    <span className="flex-1">{info.label}</span>
+                    <span className="num w-10 text-right text-xs text-muted">{Math.round((value / stats.total) * 100)}%</span>
+                    <span className="num w-24 text-right font-medium">{money(value)}</span>
+                  </li>
+                )
+              })}
+            </ul>
           </Card>
 
           <SectionTitle>Lançamentos</SectionTitle>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {stats.days.map(([day, list]) => (
               <div key={day}>
-                <p className="mb-1.5 text-xs font-bold text-tinta/45">{friendlyDay(day)}</p>
-                <Card className="divide-y divide-black/5 !py-1">
+                <div className="mb-2 flex items-baseline justify-between px-1">
+                  <p className="text-xs font-medium text-ink-soft">{friendlyDay(day)}</p>
+                  <p className="num text-xs text-muted">{money(list.reduce((s, e) => s + Number(e.amount), 0))}</p>
+                </div>
+                <Card className="divide-y divide-line !py-0">
                   {list.map((e) => {
                     const info = categoryInfo(e.category)
                     return (
-                      <button key={e.id} onClick={() => setSelected(e)} className="flex w-full items-center gap-3 py-3 text-left">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ameixa-50 text-xl">{info.emoji}</span>
+                      <button key={e.id} onClick={() => setSelected(e)} className="flex w-full items-center gap-3.5 py-3 text-left">
+                        <IconTile icon={info.icon} color={info.color} />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate font-semibold">{e.description}</span>
-                          <span className="block truncate text-xs text-tinta/50">
-                            {[e.merchant, e.payment_method, `${avatarOf(e.paid_by)} ${nameOf(e.paid_by)}`].filter(Boolean).join(' · ')}
-                            {e.source === 'nota' && ' · 🧾'}
+                          <span className="flex items-center gap-1.5">
+                            <span className="truncate font-medium">{e.description}</span>
+                            {e.source === 'nota' && <ScanLine size={13} className="shrink-0 text-faint" aria-label="Lido da nota" />}
                           </span>
+                          <span className="block truncate text-xs text-muted">{[e.merchant, e.payment_method, nameOf(e.paid_by)].filter(Boolean).join(' · ')}</span>
                         </span>
-                        <span className="shrink-0 font-bold tabular-nums">{money(e.amount)}</span>
+                        <span className="num shrink-0 font-medium">{money(e.amount)}</span>
                       </button>
                     )
                   })}
@@ -167,32 +177,32 @@ export default function GastosPage() {
 
       <Sheet open={!!selected} onClose={() => setSelected(null)} title={selected?.description ?? ''}>
         {selected && (
-          <div className="space-y-4">
-            <p className="text-3xl font-extrabold">{money(selected.amount)}</p>
-            <dl className="grid grid-cols-2 gap-3 text-sm">
-              <Info label="Categoria" value={`${categoryInfo(selected.category).emoji} ${categoryInfo(selected.category).label}`} />
+          <div className="space-y-5">
+            <p className="figure text-[44px] leading-none">{money(selected.amount)}</p>
+            <dl className="divide-y divide-line rounded-2xl border border-line bg-surface px-4 text-sm">
+              <Info label="Categoria" value={categoryInfo(selected.category).label} />
               <Info label="Data" value={friendlyDay(selected.spent_on)} />
               <Info label="Estabelecimento" value={selected.merchant ?? '—'} />
               <Info label="Pagamento" value={selected.payment_method ?? '—'} />
-              <Info label="Quem pagou" value={`${avatarOf(selected.paid_by)} ${nameOf(selected.paid_by)}`} />
+              <Info label="Pago por" value={nameOf(selected.paid_by)} />
             </dl>
             {selected.items && selected.items.length > 0 && (
-              <div className="rounded-2xl bg-white p-3 text-sm shadow-suave">
-                <p className="mb-1 font-semibold">Itens</p>
-                <ul className="divide-y divide-black/5">
+              <div>
+                <p className="mb-2 text-2xs font-medium uppercase tracking-label text-muted">Itens da nota</p>
+                <ul className="divide-y divide-line rounded-2xl border border-line bg-surface px-4 text-sm">
                   {selected.items.map((it, i) => (
-                    <li key={i} className="flex justify-between gap-2 py-1">
+                    <li key={i} className="flex justify-between gap-3 py-2.5">
                       <span className="truncate">{it.name}</span>
-                      {it.total != null && <span className="shrink-0 tabular-nums text-tinta/60">{money(it.total)}</span>}
+                      {it.total != null && <span className="num shrink-0 text-muted">{money(it.total)}</span>}
                     </li>
                   ))}
                 </ul>
               </div>
             )}
             {receiptUrl && (
-              <a href={receiptUrl} target="_blank" rel="noreferrer">
+              <a href={receiptUrl} target="_blank" rel="noreferrer" className="block">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={receiptUrl} alt="Foto da nota" className="max-h-80 w-full rounded-2xl object-contain bg-white" />
+                <img src={receiptUrl} alt="Foto da nota" className="max-h-80 w-full rounded-2xl border border-line bg-surface object-contain" />
               </a>
             )}
             <Button variant="danger" block onClick={() => remove(selected)}>
@@ -209,9 +219,9 @@ export default function GastosPage() {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-white p-3 shadow-suave">
-      <dt className="text-xs text-tinta/50">{label}</dt>
-      <dd className="mt-0.5 font-semibold">{value}</dd>
+    <div className="flex justify-between gap-4 py-3">
+      <dt className="text-muted">{label}</dt>
+      <dd className="text-right font-medium">{value}</dd>
     </div>
   )
 }

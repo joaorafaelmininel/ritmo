@@ -38,7 +38,7 @@ export function friendlyDay(day: string) {
   if (day === today) return 'Hoje'
   if (day === addDays(today, -1)) return 'Ontem'
   if (day === addDays(today, 1)) return 'Amanhã'
-  return parseDay(day).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
+  return capFirst(parseDay(day).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }))
 }
 
 export function daysSince(day: string) {
@@ -81,4 +81,8 @@ export function parseMoney(text: string) {
   const normalized = t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : /^\d+\.\d{1,2}$/.test(t) ? t : t.replace(/\./g, '')
   const n = Number(normalized)
   return isFinite(n) ? n : 0
+}
+
+export function capFirst(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }

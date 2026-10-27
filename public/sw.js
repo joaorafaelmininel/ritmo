@@ -1,5 +1,5 @@
 // Service worker mínimo: permite instalar o app e mostra uma página simples sem internet.
-const CACHE = 'nos-dois-v1'
+const CACHE = 'nos-dois-v2'
 const OFFLINE_URL = '/offline.html'
 
 self.addEventListener('install', (event) => {

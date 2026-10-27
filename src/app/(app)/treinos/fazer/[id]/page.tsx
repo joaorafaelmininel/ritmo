@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabaseBrowser } from '@/lib/supabase/client'
 import { useHousehold } from '@/components/HouseholdProvider'
-import { Button, Card, Choice, ErrorNote, Field, Input, PageHeader, Progress, Spinner, Textarea, cx } from '@/components/ui'
+import { Check, Flag, Minus, Play, Timer } from 'lucide-react'
+import { Button, Card, Chips, Choice, ErrorNote, Field, Input, Metric, PageHeader, Progress, Scale, Spinner, Textarea, cx } from '@/components/ui'
 import { COMPLETION_OPTIONS, EFFORT_LEVELS, MOODS } from '@/lib/constants'
 import type { Completion, PlanExercise, WorkoutPlan } from '@/lib/types'
 
@@ -179,8 +180,8 @@ export default function FazerTreinoPage({ params }: { params: { id: string } }) 
 
   async function finish() {
     if (!progress || !plan) return
-    if (!completion) return setError('Conta pra gente se conseguiu fazer o treino.')
-    if (!effort) return setError('Quanto cansou? Escolha uma opção.')
+    if (!completion) return setError('Indique se o treino foi realizado.')
+    if (!effort) return setError('Indique quanto o treino cansou.')
     setSaving(true)
     setError(null)
     const supabase = supabaseBrowser()
@@ -223,24 +224,22 @@ export default function FazerTreinoPage({ params }: { params: { id: string } }) 
   if (step === 'intro') {
     return (
       <>
-        <PageHeader title={`${plan.emoji} ${plan.name}`} subtitle={`${exercises.length} exercícios`} back="/treinos" />
-        {plan.description && <Card className="mb-4 text-sm text-tinta/70">📝 {plan.description}</Card>}
-        <div className="space-y-2">
+        <PageHeader eyebrow="Treino" title={plan.name} subtitle={`${exercises.length} exercícios`} back="/treinos" />
+        {plan.description && <p className="-mt-2 mb-6 border-l-2 border-accent pl-3 text-sm leading-relaxed text-ink-soft">{plan.description}</p>}
+        <Card className="divide-y divide-line !py-0">
           {exercises.map((ex, i) => (
-            <Card key={ex.id} className="!p-3">
-              <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ameixa-50 text-sm font-bold text-ameixa-700">{i + 1}</span>
-                <div className="min-w-0">
-                  <p className="font-semibold">{ex.name}</p>
-                  <p className="text-xs text-tinta/55">{describe(ex)}</p>
-                </div>
+            <div key={ex.id} className="flex items-baseline gap-4 py-3.5">
+              <span className="figure w-6 shrink-0 text-xl text-faint">{String(i + 1).padStart(2, '0')}</span>
+              <div className="min-w-0">
+                <p className="font-medium">{ex.name}</p>
+                <p className="num mt-0.5 text-sm text-muted">{describe(ex)}</p>
               </div>
-            </Card>
+            </div>
           ))}
-        </div>
+        </Card>
         <div className="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] mt-6">
-          <Button block onClick={start} className="!min-h-[56px] text-lg">
-            ▶ Começar agora
+          <Button block size="lg" variant="accent" icon={Play} onClick={start}>
+            Iniciar treino
           </Button>
         </div>
       </>
@@ -251,33 +250,41 @@ export default function FazerTreinoPage({ params }: { params: { id: string } }) 
     const elapsed = Math.floor((now - progress.startedAt) / 1000)
     return (
       <>
-        <div className="sticky top-0 z-20 -mx-4 mb-4 bg-creme/95 px-4 pb-3 pt-2 backdrop-blur">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-tinta/60">
-                {plan.emoji} {plan.name}
-              </p>
-              <p className="font-mono text-3xl font-extrabold tabular-nums">{clock(elapsed)}</p>
+        <div className="sticky top-0 z-20 -mx-5 mb-5 border-b border-line bg-paper/95 px-5 pb-4 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur">
+          <div className="flex items-end justify-between">
+            <div className="min-w-0">
+              <p className="truncate text-2xs font-medium uppercase tracking-label text-muted">{plan.name}</p>
+              <p className="figure mt-1 text-[44px] leading-none">{clock(elapsed)}</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-extrabold">
-                {doneCount}/{exercises.length}
+              <p className="figure text-[28px] leading-none">
+                {doneCount}
+                <span className="text-faint">/{exercises.length}</span>
               </p>
-              <p className="text-xs text-tinta/50">exercícios</p>
+              <p className="mt-1 text-xs text-muted">exercícios</p>
             </div>
           </div>
-          <Progress value={doneCount / Math.max(1, exercises.length)} className="mt-2" />
+          <Progress value={doneCount / Math.max(1, exercises.length)} tone="accent" className="mt-4" />
           {restUntil && (
-            <div className={cx('mt-3 flex items-center justify-between rounded-2xl px-4 py-3', restLeft > 0 ? 'bg-ceu-100 text-ceu-500' : 'bg-salvia-100 text-salvia-500')}>
-              <span className="font-bold">{restLeft > 0 ? `⏳ Descanso: ${clock(restLeft)}` : '🔔 Bora pra próxima série!'}</span>
-              <button className="text-sm font-semibold underline" onClick={() => setRestUntil(null)}>
+            <div className={cx('mt-3 flex items-center justify-between rounded-xl px-4 py-3', restLeft > 0 ? 'bg-ink text-paper' : 'bg-good text-white')}>
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <Timer size={16} strokeWidth={1.75} />
+                {restLeft > 0 ? (
+                  <>
+                    Descanso <span className="figure text-xl leading-none">{clock(restLeft)}</span>
+                  </>
+                ) : (
+                  'Próxima série'
+                )}
+              </span>
+              <button className="text-sm font-medium opacity-80 hover:opacity-100" onClick={() => setRestUntil(null)}>
                 {restLeft > 0 ? 'Pular' : 'Ok'}
               </button>
             </div>
           )}
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {exercises.map((ex, i) => {
             const done = isDone(ex)
             const skipped = progress.skipped.includes(ex.id)
@@ -287,57 +294,57 @@ export default function FazerTreinoPage({ params }: { params: { id: string } }) 
             return (
               <Card
                 key={ex.id}
-                className={cx(open && 'ring-2 ring-ameixa-500', (done || skipped) && !open && 'opacity-60')}
+                className={cx('transition', open ? 'border-ink' : 'hover:border-faint', (done || skipped) && !open && 'opacity-55')}
                 onClick={open ? undefined : () => setProgress({ ...progress, current: i })}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3.5">
                   <span
                     className={cx(
-                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold',
-                      done ? 'bg-salvia-500 text-white' : skipped ? 'bg-black/10 text-tinta/50' : 'bg-ameixa-50 text-ameixa-700',
+                      'num flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium',
+                      done ? 'bg-good text-white' : skipped ? 'bg-sunken text-faint' : open ? 'bg-ink text-paper' : 'border border-line text-muted',
                     )}
                   >
-                    {done ? '✓' : skipped ? '–' : i + 1}
+                    {done ? <Check size={15} strokeWidth={2.5} /> : skipped ? <Minus size={15} /> : i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className={cx('font-bold', done && 'line-through decoration-2')}>{ex.name}</p>
-                    <p className="text-xs text-tinta/55">{describe(ex)}</p>
+                    <p className={cx('font-medium', done && 'line-through decoration-faint')}>{ex.name}</p>
+                    <p className="num text-sm text-muted">{describe(ex)}</p>
                   </div>
                 </div>
 
                 {open && (
-                  <div className="mt-4 space-y-4">
-                    {ex.notes && <p className="rounded-xl bg-mel-100 px-3 py-2 text-sm text-tinta/80">💡 {ex.notes}</p>}
+                  <div className="mt-5 space-y-4">
+                    {ex.notes && <p className="border-l-2 border-accent pl-3 text-sm leading-relaxed text-ink-soft">{ex.notes}</p>}
                     <div>
-                      <p className="mb-2 text-xs font-semibold text-tinta/50">Toque em cada série ao terminar</p>
-                      <div className="flex flex-wrap gap-2">
+                      <p className="mb-2 text-xs text-muted">Toque em cada série ao concluir</p>
+                      <div className="grid grid-cols-5 gap-2">
                         {Array.from({ length: total }, (_, s) => (
                           <button
                             key={s}
                             onClick={() => tapSet(ex, s)}
                             className={cx(
-                              'flex h-14 w-14 flex-col items-center justify-center rounded-2xl text-sm font-bold transition active:scale-90',
-                              s < setsDone ? 'bg-salvia-500 text-white animate-pop' : 'bg-ameixa-50 text-ameixa-700',
+                              'flex aspect-square flex-col items-center justify-center rounded-xl border text-[15px] font-medium transition active:scale-95',
+                              s < setsDone ? 'border-good bg-good text-white' : 'border-line bg-paper text-ink',
                             )}
                           >
-                            {s < setsDone ? '✓' : s + 1}
-                            <span className="text-[10px] font-medium opacity-80">{ex.reps ?? ''}</span>
+                            {s < setsDone ? <Check size={18} strokeWidth={2.25} /> : <span className="num">{s + 1}</span>}
+                            {ex.reps && <span className={cx('num text-2xs', s < setsDone ? 'text-white/80' : 'text-muted')}>{ex.reps}</span>}
                           </button>
                         ))}
                       </div>
                     </div>
                     <Input
-                      placeholder="Anotação (ex.: subi a carga, senti o joelho…)"
+                      placeholder="Anotação: aumentei a carga, senti o joelho…"
                       value={progress.notes[ex.id] ?? ''}
                       onChange={(e) => setProgress({ ...progress, notes: { ...progress.notes, [ex.id]: e.target.value } })}
                       className="!py-2.5 text-sm"
                     />
                     <div className="grid grid-cols-2 gap-2">
-                      <Button variant="ghost" onClick={() => skipExercise(ex)}>
+                      <Button variant="secondary" onClick={() => skipExercise(ex)}>
                         Pular
                       </Button>
-                      <Button variant="soft" onClick={() => completeExercise(ex)} disabled={done}>
-                        ✓ Concluído
+                      <Button onClick={() => completeExercise(ex)} disabled={done}>
+                        Concluir
                       </Button>
                     </div>
                   </div>
@@ -347,9 +354,9 @@ export default function FazerTreinoPage({ params }: { params: { id: string } }) 
           })}
         </div>
 
-        <div className="mt-6 space-y-2">
-          <Button block onClick={goToFeedback} className="!min-h-[56px] text-lg">
-            🏁 Finalizar treino
+        <div className="mt-8 space-y-2">
+          <Button block size="lg" variant="accent" icon={Flag} onClick={goToFeedback}>
+            Finalizar treino
           </Button>
           <Button block variant="ghost" onClick={cancel}>
             Descartar
@@ -362,33 +369,35 @@ export default function FazerTreinoPage({ params }: { params: { id: string } }) 
   if (step === 'feedback') {
     return (
       <>
-        <PageHeader title="Como foi o treino?" subtitle="Leva 10 segundinhos" />
-        <div className="space-y-6">
-          <div>
-            <p className="mb-2 font-bold">Você realizou o treino?</p>
+        <PageHeader eyebrow={plan.name} title="Como foi?" subtitle="Quatro respostas rápidas para acompanhar a evolução." />
+        <div className="space-y-8">
+          <Question n={1} title="Você realizou o treino?">
             <Choice options={COMPLETION_OPTIONS} value={completion} onChange={setCompletion} />
-          </div>
-          <div>
-            <p className="mb-2 font-bold">Quanto cansou?</p>
-            <Choice options={EFFORT_LEVELS} value={effort} onChange={setEffort} columns={5} />
-          </div>
-          <div>
-            <p className="mb-2 font-bold">Como você está se sentindo?</p>
-            <Choice options={MOODS} value={mood} onChange={setMood} columns={5} />
-          </div>
-          <Field label="Quanto tempo levou? (minutos)" hint="Já calculamos pelo cronômetro — ajuste se precisar.">
-            <Input inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ''))} />
-          </Field>
-          <Field label="Quer contar mais alguma coisa?">
-            <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex.: hoje rendeu muito! / senti a lombar no agachamento" />
+          </Question>
+          <Question n={2} title="Quanto cansou?">
+            <Scale options={EFFORT_LEVELS} value={effort} onChange={setEffort} />
+          </Question>
+          <Question n={3} title="Como você está se sentindo?">
+            <Chips options={MOODS} value={mood} onChange={setMood} wrap />
+          </Question>
+          <Question n={4} title="Quanto tempo levou?">
+            <div className="flex items-center gap-3">
+              <Input inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ''))} className="figure !w-28 text-center !text-2xl" />
+              <span className="text-sm text-muted">minutos · calculado pelo cronômetro</span>
+            </div>
+          </Question>
+          <Field label="Observações (opcional)">
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex.: rendeu muito hoje, senti a lombar no agachamento…" />
           </Field>
           <ErrorNote message={error} />
-          <Button block onClick={finish} disabled={saving} className="!min-h-[56px] text-lg">
-            {saving ? 'Salvando…' : 'Salvar treino'}
-          </Button>
-          <Button block variant="ghost" onClick={() => setStep('treino')}>
-            Voltar ao treino
-          </Button>
+          <div className="space-y-2">
+            <Button block size="lg" onClick={finish} disabled={saving}>
+              {saving ? 'Salvando…' : 'Salvar treino'}
+            </Button>
+            <Button block variant="ghost" onClick={() => setStep('treino')}>
+              Voltar ao treino
+            </Button>
+          </div>
         </div>
       </>
     )
@@ -397,27 +406,47 @@ export default function FazerTreinoPage({ params }: { params: { id: string } }) 
   // pronto
   const effortInfo = EFFORT_LEVELS.find((e) => e.value === effort)
   return (
-    <div className="flex min-h-[70dvh] flex-col items-center justify-center text-center">
-      <span className="text-7xl animate-pop">{completion === 'nao' ? '🫶' : '🎉'}</span>
-      <h1 className="mt-4 text-3xl font-extrabold">{completion === 'nao' ? 'Tudo bem, amanhã tem mais!' : 'Treino concluído!'}</h1>
-      <p className="mt-2 text-tinta/60">
-        {doneCount} de {exercises.length} exercícios · {minutes} min {effortInfo && `· ${effortInfo.emoji} ${effortInfo.label}`}
-      </p>
-      <Link href="/treinos" className="mt-8 w-full">
-        <Button block>Voltar aos treinos</Button>
-      </Link>
-      <Link href="/" className="mt-2 w-full">
-        <Button block variant="ghost">
-          Ir para o início
-        </Button>
-      </Link>
+    <div className="flex min-h-[75dvh] animate-rise flex-col justify-center">
+      <span className={cx('flex h-14 w-14 items-center justify-center rounded-full text-white', completion === 'nao' ? 'bg-ink' : 'bg-good')}>
+        <Check size={26} strokeWidth={2.25} />
+      </span>
+      <h1 className="mt-6 font-serif text-[44px] leading-[1.02]">{completion === 'nao' ? 'Registrado. Amanhã tem mais.' : 'Treino concluído.'}</h1>
+      <dl className="mt-8 grid grid-cols-3 divide-x divide-line border-y border-line py-4">
+        <Metric className="px-3 first:pl-0" label="Exercícios" value={`${doneCount}/${exercises.length}`} />
+        <Metric className="px-3" label="Duração" value={`${minutes}′`} />
+        <Metric className="px-3" label="Esforço" value={effortInfo ? `${effortInfo.value}/5` : '—'} />
+      </dl>
+      <div className="mt-10 space-y-2">
+        <Link href="/treinos" className="block">
+          <Button block size="lg">
+            Voltar aos treinos
+          </Button>
+        </Link>
+        <Link href="/" className="block">
+          <Button block variant="ghost">
+            Ir para Hoje
+          </Button>
+        </Link>
+      </div>
     </div>
+  )
+}
+
+function Question({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <div className="mb-3 flex items-baseline gap-3">
+        <span className="figure text-lg text-accent">{String(n).padStart(2, '0')}</span>
+        <h2 className="text-[17px] font-medium">{title}</h2>
+      </div>
+      {children}
+    </section>
   )
 }
 
 function describe(ex: PlanExercise) {
   return (
-    [ex.sets && ex.reps ? `${ex.sets} × ${ex.reps}` : ex.sets ? `${ex.sets} séries` : ex.reps, ex.load, ex.rest_seconds && `descanso ${ex.rest_seconds}s`]
+    [ex.sets && ex.reps ? `${ex.sets} × ${ex.reps}` : ex.sets ? `${ex.sets} séries` : ex.reps, ex.load, ex.rest_seconds && `pausa ${ex.rest_seconds}s`]
       .filter(Boolean)
       .join(' · ') || 'Livre'
   )

@@ -8,11 +8,11 @@ export const metadata: Metadata = {
   description: 'Assistente pessoal do casal: treinos, dieta, gastos, atividades, perfumes e estudos.',
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, title: 'Nós Dois', statusBarStyle: 'default' },
-  icons: { icon: '/icons/icon.svg', apple: '/icons/apple-touch-icon.png' },
+  icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#FBF7F2',
+  themeColor: '#F5F3EF',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',

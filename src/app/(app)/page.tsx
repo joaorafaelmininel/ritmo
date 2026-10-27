@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { ArrowUpRight, Camera, Check, ChevronRight, Droplet, Dumbbell, Flower2, Plus, Timer, UtensilsCrossed } from 'lucide-react'
 import { supabaseBrowser } from '@/lib/supabase/client'
 import { useHousehold } from '@/components/HouseholdProvider'
-import { Card, Progress, SectionTitle, Spinner } from '@/components/ui'
+import { Card, Progress, SectionTitle, Spinner, TextLink, cx } from '@/components/ui'
 import { formatDuration, greeting, isoDay, longToday, money, startOfMonth, startOfWeek } from '@/lib/format'
 import type { Activity, Perfume, WorkoutPlan, WorkoutSession } from '@/lib/types'
 
@@ -21,7 +22,7 @@ type Summary = {
   mealsToday: number
 }
 
-export default function InicioPage() {
+export default function HojePage() {
   const { me, partner } = useHousehold()
   const [data, setData] = useState<Summary | null>(null)
 
@@ -64,29 +65,35 @@ export default function InicioPage() {
 
   const weekday = new Date().getDay()
   const todayPlans = data?.plans.filter((p) => (p.assigned_to === me.id || p.assigned_to === null) && p.weekdays.includes(weekday)) ?? []
-  const trainedToday = (data?.sessionsToday.length ?? 0) > 0
+  const trained = (data?.sessionsToday.length ?? 0) > 0
+  const studyGoal = me.weekly_study_goal_minutes || 150
 
   return (
     <>
-      <header className="pb-4 pt-2">
-        <p className="text-sm font-semibold text-tinta/50 first-letter:uppercase">{longToday()}</p>
-        <h1 className="text-3xl font-extrabold tracking-tight">
-          {greeting()}, {me.display_name} {me.avatar}
+      <header className="pb-7 pt-3">
+        <p className="text-2xs font-medium uppercase tracking-label text-muted first-letter:uppercase">{longToday()}</p>
+        <h1 className="mt-2 font-serif text-[44px] leading-[1.02] tracking-[-0.01em]">
+          {greeting()},<br />
+          <span className="italic">{me.display_name}.</span>
         </h1>
-        {partner && <p className="mt-0.5 text-sm text-tinta/55">Você e {partner.display_name} {partner.avatar}</p>}
+        {partner && <p className="mt-2 text-sm text-muted">Em casa com {partner.display_name}</p>}
       </header>
 
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
         {[
-          { href: '/gastos/novo', emoji: '📸', label: 'Nota fiscal' },
-          { href: '/perfumes', emoji: '🌸', label: 'Perfume' },
-          { href: '/dieta', emoji: '🍽️', label: 'Refeição' },
-          { href: '/estudos', emoji: '⏱', label: 'Estudar' },
-          { href: '/atividades', emoji: '✅', label: 'Tarefa' },
-        ].map((a) => (
-          <Link key={a.href + a.label} href={a.href} className="flex shrink-0 items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-bold shadow-suave active:scale-95">
-            <span className="text-lg">{a.emoji}</span>
-            {a.label}
+          { href: '/gastos/novo', icon: Camera, label: 'Nota fiscal' },
+          { href: '/perfumes', icon: Flower2, label: 'Perfume' },
+          { href: '/dieta', icon: UtensilsCrossed, label: 'Refeição' },
+          { href: '/estudos', icon: Timer, label: 'Estudar' },
+          { href: '/atividades', icon: Plus, label: 'Tarefa' },
+        ].map(({ href, icon: Icon, label }) => (
+          <Link
+            key={label}
+            href={href}
+            className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-line bg-surface px-4 text-[13px] font-medium text-ink-soft transition hover:border-faint active:scale-95"
+          >
+            <Icon size={16} strokeWidth={1.75} />
+            {label}
           </Link>
         ))}
       </div>
@@ -95,100 +102,116 @@ export default function InicioPage() {
         <Spinner />
       ) : (
         <>
-          <SectionTitle>Treino de hoje</SectionTitle>
-          {trainedToday ? (
-            <Card className="bg-salvia-100">
-              <p className="text-lg font-extrabold">🎉 Treino feito hoje!</p>
-              <p className="text-sm text-tinta/60">
-                {data.sessionsToday.map((s) => `${s.plan_name}${s.duration_minutes ? ` · ${formatDuration(s.duration_minutes)}` : ''}`).join(' / ')}
-              </p>
+          {/* Treino */}
+          <SectionTitle>Treino</SectionTitle>
+          {trained ? (
+            <Card className="flex items-center gap-4">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-good text-white">
+                <Check size={18} strokeWidth={2.25} />
+              </span>
+              <div className="min-w-0">
+                <p className="font-medium">Treino concluído</p>
+                <p className="truncate text-sm text-muted">
+                  {data.sessionsToday.map((s) => `${s.plan_name}${s.duration_minutes ? ` · ${formatDuration(s.duration_minutes)}` : ''}`).join(' / ')}
+                </p>
+              </div>
             </Card>
           ) : todayPlans.length > 0 ? (
             <div className="space-y-2">
               {todayPlans.map((p) => (
-                <Link key={p.id} href={`/treinos/fazer/${p.id}`}>
-                  <Card className="flex items-center gap-3 bg-gradient-to-r from-ameixa-600 to-ameixa-500 text-white">
-                    <span className="text-3xl">{p.emoji}</span>
-                    <span className="flex-1">
-                      <span className="block font-extrabold">{p.name}</span>
-                      <span className="block text-sm opacity-80">Toque para começar</span>
+                <Link key={p.id} href={`/treinos/fazer/${p.id}`} className="group block">
+                  <div className="flex items-center gap-4 rounded-2xl bg-ink p-5 text-paper transition active:scale-[0.99]">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-2xs font-medium uppercase tracking-label text-paper/60">Programado para hoje</p>
+                      <p className="mt-1 truncate font-serif text-[28px] leading-tight">{p.name}</p>
+                    </div>
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-paper text-ink transition group-hover:translate-x-0.5">
+                      <ArrowUpRight size={20} strokeWidth={1.75} />
                     </span>
-                    <span className="text-2xl">▶</span>
-                  </Card>
+                  </div>
                 </Link>
               ))}
             </div>
           ) : (
-            <Link href="/treinos">
-              <Card>
-                <p className="font-semibold">😌 Dia livre de treino</p>
-                <p className="text-sm text-tinta/55">Quer treinar mesmo assim? Veja os treinos →</p>
+            <Link href="/treinos" className="block">
+              <Card className="flex items-center gap-4 transition hover:border-faint">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sunken text-muted">
+                  <Dumbbell size={18} strokeWidth={1.6} />
+                </span>
+                <div className="flex-1">
+                  <p className="font-medium">Dia de descanso</p>
+                  <p className="text-sm text-muted">Nenhum treino programado para hoje</p>
+                </div>
+                <ChevronRight size={18} className="text-faint" />
               </Card>
             </Link>
           )}
 
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <Link href="/perfumes">
-              <Card className="h-full bg-rosa-100">
-                <p className="text-2xl">🌸</p>
-                <p className="mt-1 text-xs font-semibold text-tinta/60">Perfume de hoje</p>
-                <p className="line-clamp-2 font-extrabold leading-tight">{data.perfumeToday ?? (data.hasPerfumes ? 'Qual você usou?' : 'Monte sua coleção')}</p>
-              </Card>
+          {/* Resumo */}
+          <SectionTitle>Resumo</SectionTitle>
+          <div className="grid grid-cols-2 gap-3">
+            <Link href="/gastos" className="rounded-2xl border border-line bg-surface p-4 transition hover:border-faint">
+              <p className="text-2xs font-medium uppercase tracking-label text-muted">Gastos do mês</p>
+              <p className="figure mt-3 text-[30px] leading-none">{money(data.monthTotal)}</p>
             </Link>
-            <Link href="/gastos">
-              <Card className="h-full bg-mel-100">
-                <p className="text-2xl">💸</p>
-                <p className="mt-1 text-xs font-semibold text-tinta/60">Gastos do mês</p>
-                <p className="text-xl font-extrabold tabular-nums">{money(data.monthTotal)}</p>
-              </Card>
-            </Link>
-            <Link href="/estudos">
-              <Card className="h-full bg-ceu-100">
-                <p className="text-2xl">📚</p>
-                <p className="mt-1 text-xs font-semibold text-tinta/60">Estudo na semana</p>
-                <p className="font-extrabold">
-                  {formatDuration(data.studyWeek)} <span className="text-xs font-semibold text-tinta/50">/ {formatDuration(me.weekly_study_goal_minutes)}</span>
-                </p>
-                <Progress value={data.studyWeek / (me.weekly_study_goal_minutes || 150)} className="mt-2 !bg-white/70" />
-                {data.dueCards > 0 && <p className="mt-2 text-xs font-bold text-ceu-500">{data.dueCards} palavras para revisar</p>}
-              </Card>
-            </Link>
-            <Link href="/dieta">
-              <Card className="h-full bg-salvia-100">
-                <p className="text-2xl">🥗</p>
-                <p className="mt-1 text-xs font-semibold text-tinta/60">Dieta hoje</p>
-                <p className="font-extrabold">
-                  {data.mealsToday} {data.mealsToday === 1 ? 'refeição' : 'refeições'}
-                </p>
-                <p className="text-sm font-semibold text-tinta/60">
-                  💧 {data.water}/{me.daily_water_goal} copos
-                </p>
-              </Card>
+            <Link href="/estudos" className="rounded-2xl border border-line bg-surface p-4 transition hover:border-faint">
+              <p className="text-2xs font-medium uppercase tracking-label text-muted">Estudo na semana</p>
+              <p className="figure mt-3 text-[30px] leading-none">{formatDuration(data.studyWeek)}</p>
+              <Progress value={data.studyWeek / studyGoal} tone="accent" className="mt-3" />
+              <p className="mt-1.5 text-xs text-muted">meta {formatDuration(studyGoal)}</p>
             </Link>
           </div>
 
-          <SectionTitle action={<Link href="/atividades" className="text-sm font-bold text-ameixa-600">Ver tudo</Link>}>Para hoje</SectionTitle>
+          <Card className="mt-3 divide-y divide-line !p-0">
+            <Row
+              href="/perfumes"
+              icon={Flower2}
+              title="Perfume de hoje"
+              value={data.perfumeToday ?? (data.hasPerfumes ? 'Registrar' : 'Montar coleção')}
+              muted={!data.perfumeToday}
+            />
+            <Row href="/dieta" icon={Droplet} title="Água" value={`${data.water} de ${me.daily_water_goal} copos`} />
+            <Row href="/dieta" icon={UtensilsCrossed} title="Refeições" value={data.mealsToday ? `${data.mealsToday} registradas` : 'Nenhuma ainda'} muted={!data.mealsToday} />
+            {data.dueCards > 0 && <Row href="/estudos" icon={Timer} title="Vocabulário" value={`${data.dueCards} para revisar`} />}
+          </Card>
+
+          {/* Pendências */}
+          <SectionTitle action={<TextLink href="/atividades">Ver todas</TextLink>}>Pendências</SectionTitle>
           {data.activities.length === 0 ? (
-            <Card>
-              <p className="text-sm text-tinta/60">✨ Nenhuma atividade pendente para hoje.</p>
-            </Card>
+            <p className="text-sm text-muted">Nada pendente para hoje.</p>
           ) : (
-            <Card className="divide-y divide-black/5 !py-1">
-              {data.activities.slice(0, 6).map((a) => (
-                <div key={a.id} className="flex items-center gap-3 py-3">
-                  <button onClick={() => completeActivity(a)} aria-label="Concluir" className="h-7 w-7 shrink-0 rounded-full border-2 border-black/20" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{a.title}</p>
-                    <p className="text-xs text-tinta/50">
-                      {a.due_on && a.due_on < isoDay() ? '⚠️ Atrasada' : a.due_time ? a.due_time.slice(0, 5) : a.due_on ? 'Hoje' : 'Sem data'}
-                    </p>
+            <Card className="divide-y divide-line !py-0">
+              {data.activities.slice(0, 6).map((a) => {
+                const late = a.due_on && a.due_on < isoDay()
+                return (
+                  <div key={a.id} className="flex items-center gap-3.5 py-3.5">
+                    <button
+                      onClick={() => completeActivity(a)}
+                      aria-label="Concluir"
+                      className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-faint transition hover:border-ink"
+                    />
+                    <p className="min-w-0 flex-1 truncate">{a.title}</p>
+                    <span className={cx('num shrink-0 text-xs', late ? 'font-medium text-bad' : 'text-muted')}>
+                      {late ? 'Atrasada' : a.due_time ? a.due_time.slice(0, 5) : a.due_on ? 'Hoje' : ''}
+                    </span>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </Card>
           )}
         </>
       )}
     </>
+  )
+}
+
+function Row({ href, icon: Icon, title, value, muted }: { href: string; icon: typeof Flower2; title: string; value: string; muted?: boolean }) {
+  return (
+    <Link href={href} className="flex items-center gap-3.5 px-4 py-3.5 transition hover:bg-paper/60">
+      <Icon size={18} strokeWidth={1.6} className="shrink-0 text-muted" />
+      <span className="flex-1 text-[15px]">{title}</span>
+      <span className={cx('truncate text-sm', muted ? 'text-faint' : 'font-medium text-ink')}>{value}</span>
+      <ChevronRight size={16} className="shrink-0 text-faint" />
+    </Link>
   )
 }

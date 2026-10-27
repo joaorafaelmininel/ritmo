@@ -1,5 +1,6 @@
 'use client'
 
+import { Check } from 'lucide-react'
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
 
 const ToastCtx = createContext<(message: string) => void>(() => {})
@@ -21,7 +22,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       {message && (
         <div className="pointer-events-none fixed inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-[60] flex justify-center px-4">
-          <div className="animate-fade rounded-full bg-tinta px-5 py-3 text-sm font-semibold text-white shadow-lg">{message}</div>
+          <div className="flex animate-rise items-center gap-2 rounded-full bg-ink py-2.5 pl-3 pr-4 text-sm font-medium text-paper shadow-lift">
+            <Check size={16} strokeWidth={2} />
+            {message}
+          </div>
         </div>
       )}
     </ToastCtx.Provider>
