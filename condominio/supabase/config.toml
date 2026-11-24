@@ -1,0 +1,18 @@
+# Configuração mínima para o Supabase CLI (supabase link / db push / functions deploy)
+project_id = "vizinhar"
+
+[auth]
+site_url = "vizinhar://"
+additional_redirect_urls = ["vizinhar://**"]
+
+[auth.email]
+enable_signup = true
+# Login por código de 6 dígitos enviado por e-mail (sem senha para decorar)
+otp_length = 6
+otp_expiry = 3600
+
+[functions.excluir-conta]
+verify_jwt = true
+
+[functions.notificar]
+verify_jwt = true

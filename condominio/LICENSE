@@ -1,0 +1,23 @@
+LICENÇA PROPRIETÁRIA — TODOS OS DIREITOS RESERVADOS
+
+Vizinhar — aplicativo de gestão e comunicação condominial
+Copyright (c) 2026 [TITULAR: nome completo ou razão social e CPF/CNPJ]
+
+Este programa de computador, incluindo seu código-fonte, código-objeto, banco de
+dados, documentação, interface, nome, marca e identidade visual, é protegido pela
+Lei nº 9.609/1998 (Lei do Software), pela Lei nº 9.610/1998 (Direitos Autorais) e
+pela Lei nº 9.279/1996 (Propriedade Industrial).
+
+É PROIBIDO, sem autorização prévia e por escrito do titular:
+  1. copiar, reproduzir, modificar, adaptar, traduzir ou criar obras derivadas;
+  2. descompilar, desmontar ou aplicar engenharia reversa;
+  3. distribuir, sublicenciar, vender, alugar, ceder ou disponibilizar a terceiros;
+  4. usar o código, total ou parcialmente, em outro produto ou serviço.
+
+A mera visualização deste repositório não concede nenhuma licença.
+
+Condomínios autorizados recebem licença de USO do aplicativo nos termos do
+contrato de licença firmado com o titular (ver docs/MODELO-LICENCA-CONDOMINIO.md).
+
+Componentes de terceiros incluídos permanecem sob suas próprias licenças
+(ver TERCEIROS.md).
