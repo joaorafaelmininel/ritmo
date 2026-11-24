@@ -9,11 +9,10 @@ import { useConsulta } from '@/lib/consulta';
 import { dataCurta } from '@/lib/formato';
 import { useSessao } from '@/lib/sessao';
 import { mensagemErro, supabase } from '@/lib/supabase';
+import { DOCS_GERAIS } from '@/lib/tipos';
 
 type Documento = { id: string; titulo: string; categoria: string; arquivo_path: string; publico: boolean; criado_em: string };
-const CATEGORIAS: Record<string, string> = {
-  convencao: 'Convenção', regimento: 'Regimento interno', ata: 'Atas de assembleia', balancete: 'Balancetes', contrato: 'Contratos', outro: 'Outros',
-};
+const CATEGORIAS = DOCS_GERAIS;
 
 export default function Documentos() {
   const { condominioId, eGestor } = useSessao();
@@ -25,7 +24,7 @@ export default function Documentos() {
   const [arquivo, setArquivo] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
 
   const { dados, recarregar } = useConsulta(
-    () => supabase.from('documentos').select('*').eq('condominio_id', condominioId).order('criado_em', { ascending: false }).returns<Documento[]>(),
+    () => supabase.from('documentos').select('*').eq('condominio_id', condominioId).in('categoria', Object.keys(DOCS_GERAIS)).order('criado_em', { ascending: false }).returns<Documento[]>(),
     [condominioId],
   );
 
@@ -51,6 +50,7 @@ export default function Documentos() {
   return (
     <Tela>
       <Stack.Screen options={{ title: 'Documentos' }} />
+      <Texto suave>Convenção, regimento e atas. Balancetes, contratos e demais documentos financeiros ficam em Finanças.</Texto>
       {eGestor && !novo ? <Botao icone="cloud-upload-outline" titulo="Enviar documento" aoTocar={() => setNovo(true)} /> : null}
       {novo ? (
         <Cartao>

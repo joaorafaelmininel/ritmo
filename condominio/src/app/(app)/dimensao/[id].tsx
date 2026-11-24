@@ -1,42 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { View } from 'react-native';
 
+import { Item, ItemLista } from '@/components/lista';
 import { NomeIcone, Tela, Texto } from '@/components/ui';
 import { dataCurta, moeda } from '@/lib/formato';
 import { useResumo } from '@/lib/resumo';
 import { useSessao } from '@/lib/sessao';
-import { ALVO_TOQUE, espaco, useTema } from '@/lib/tema';
+import { espaco } from '@/lib/tema';
 import { Dimensao, DIMENSOES } from '@/lib/tipos';
-
-type Item = { titulo: string; detalhe?: string; icone: NomeIcone; rota: string; contador?: number; destaque?: boolean };
-
-/** Item grande de lista: ícone, título e explicação, um toque abre. */
-function ItemGrande({ item, cor }: { item: Item; cor: string }) {
-  const { c, borda } = useTema();
-  return (
-    <Pressable
-      onPress={() => router.push(item.rota as never)}
-      accessibilityRole="button"
-      accessibilityLabel={`${item.titulo}${item.detalhe ? `. ${item.detalhe}` : ''}${item.contador ? `. ${item.contador} pendente${item.contador > 1 ? 's' : ''}` : ''}`}
-      style={({ pressed }) => ({
-        minHeight: ALVO_TOQUE + 20, borderRadius: 16, padding: espaco.m, flexDirection: 'row', alignItems: 'center', gap: espaco.m,
-        backgroundColor: item.destaque ? cor : c.superficie, borderWidth: item.destaque ? 0 : borda + 1, borderColor: c.borda, opacity: pressed ? 0.8 : 1,
-      })}>
-      <Ionicons name={item.icone} size={34} color={item.destaque ? '#fff' : cor} />
-      <View style={{ flex: 1 }}>
-        <Texto tamanho="subtitulo" negrito cor={item.destaque ? '#fff' : c.texto}>{item.titulo}</Texto>
-        {item.detalhe ? <Texto tamanho="pequeno" cor={item.destaque ? '#fff' : c.textoSuave}>{item.detalhe}</Texto> : null}
-      </View>
-      {item.contador ? (
-        <View style={{ minWidth: 32, height: 32, borderRadius: 16, backgroundColor: c.perigo, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 }}>
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 17 }}>{item.contador}</Text>
-        </View>
-      ) : null}
-      <Ionicons name="chevron-forward" size={26} color={item.destaque ? '#fff' : c.textoSuave} />
-    </Pressable>
-  );
-}
 
 export default function DimensaoTela() {
   const { id } = useLocalSearchParams<{ id: Dimensao }>();
@@ -86,7 +58,7 @@ export default function DimensaoTela() {
         <Ionicons name={info.icone as never} size={36} color={info.cor} />
         <Texto suave style={{ flex: 1 }}>{info.descricao}</Texto>
       </View>
-      {itens[id]?.map((item) => <ItemGrande key={item.titulo} item={item} cor={info.cor} />)}
+      {itens[id]?.map((item) => <ItemLista key={item.titulo} item={item} cor={info.cor} />)}
     </Tela>
   );
 }

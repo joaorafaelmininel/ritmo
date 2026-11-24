@@ -117,6 +117,27 @@ log('B envia em documentos (falha)', await as(B, `insert into storage.objects (b
 log('C lê foto do chamado de B', await as(C, `select count(*) from storage.objects`), (v) => n(v) === 0);
 log('A lê foto', await as(A, `select count(*) from storage.objects`), (v) => n(v) === 1);
 log('B meus_dados', await as(B, `select meus_dados() d`));
+// --- Transparência financeira ---
+log('A contas padrão', await as(A, `select count(*) from contas_bancarias`), (v) => n(v) === 2);
+const [conta] = await as(A, `select id from contas_bancarias limit 1`);
+log('A registra saldo', await as(A, `insert into saldos (condominio_id, conta_id, competencia, saldo_final) values ($1,$2,'2026-10-01',48250.10) returning saldo_final`, [c, conta.id]));
+log('B vê saldos', await as(B, `select count(*) from saldos`), (v) => n(v) === 1);
+log('B registra saldo (falha)', await as(B, `insert into saldos (condominio_id, conta_id, competencia, saldo_final) values ($1,$2,'2026-11-01',1)`, [c, conta.id]));
+log('A balancete c/ competência', await as(A, `insert into documentos (condominio_id,titulo,categoria,arquivo_path,competencia) values ($1,'Balancete outubro','balancete','x','2026-10-01') returning categoria`, [c]));
+// --- Dia a dia: portaria ---
+await as(A, `update membros set papel='portaria' where perfil_id=$1`, [C]);
+log('C (portaria) publica comunicado operacional', await as(C, `insert into avisos (condominio_id,titulo,corpo,categoria) values ($1,'Portão B','Usar portão A','operacional') returning id`, [c]));
+log('C (portaria) aviso financeiro (falha)', await as(C, `insert into avisos (condominio_id,titulo,corpo,categoria) values ($1,'x','y','financeiro')`, [c]));
+log('B avisa visita', await as(B, `insert into portaria (condominio_id,unidade_id,origem,tipo,nome,status) values ($1,$2,'morador','prestador','Pedreiro José','esperado') returning status`, [c, ub]));
+log('B registra como portaria (falha)', await as(B, `insert into portaria (condominio_id,unidade_id,origem,nome,status) values ($1,$2,'portaria','X','na_portaria')`, [c, ub]));
+const [vis] = await as(C, `insert into portaria (condominio_id,unidade_id,origem,tipo,nome,status) values ($1,$2,'portaria','visita','Sobrinha Ana','na_portaria') returning id`, [c, ub]);
+log('Portaria vê registros', await as(C, `select count(*) from portaria`), (v) => n(v) === 2);
+log('B autoriza visita', await as(B, `update portaria set status='autorizado' where id=$1 returning status, respondido_em is not null r`, [vis.id]), (v) => v[0].status === 'autorizado' && v[0].r);
+log('B marca entrada (falha)', await as(B, `update portaria set status='entrou' where id=$1`, [vis.id]));
+log('Portaria marca entrada', await as(C, `update portaria set status='entrou' where id=$1 returning status`, [vis.id]), (v) => v[0].status === 'entrou');
+log('Gestão vê registros da portaria', await as(A, `select count(*) from portaria`), (v) => n(v) === 2);
+log('A cadastra equipe', await as(A, `insert into equipe (condominio_id,nome,funcao,dias,hora_inicio,hora_fim) values ($1,'João','portaria','{0,1,2,3,4,5,6}','19:00','07:00') returning nome`, [c]));
+log('B vê equipe', await as(B, `select count(*) from equipe`), (v) => n(v) === 1);
 log('anon vê avisos', await as('', `select count(*) from avisos`), (v) => n(v) === 0);
 console.log(falhas ? `\n${falhas} verificação(ões) falharam` : '\nTodas as verificações passaram');
 process.exit(falhas ? 1 : 0);

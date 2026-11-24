@@ -27,6 +27,9 @@
 | Token de notificação | Envio de push | Consentimento (art. 7º, I) | Sistema | Removido ao desativar ou após 6 meses parado |
 | Leituras de avisos | Saber se o recado chegou | Legítimo interesse | Gestão (só contagem) | 2 anos |
 | Encomendas | Aviso de chegada | Legítimo interesse | Unidade, portaria | 6 meses após retirada |
+| Nome de visitantes e prestadores | Controle de acesso pela portaria | Legítimo interesse (segurança) | Unidade visitada, portaria | **30 dias** (sem documento, placa ou foto) |
+| Equipe (primeiro nome, função, horário) | Saber quem está em serviço | Legítimo interesse / execução de contrato de trabalho | Moradores | Enquanto estiver na escala |
+| Extratos bancários | Transparência das contas | Obrigação legal (prestação de contas) | Todos **só se** a gestão confirmar que ocultou dados de moradores; senão, gestão e conselho | 5 anos |
 
 **Não coletamos:** CPF, RG, data de nascimento, localização, contatos, dados de saúde, biometria, imagens de câmeras de segurança, dados de crianças.
 
@@ -36,6 +39,8 @@
 - **Permissão por coluna**: o código de acesso das unidades não pode ser lido por moradores.
 - **Voto secreto**: a tabela de votos não é legível; resultados só por função agregadora.
 - **Inadimplência agregada**: moradores veem só o total, nunca quais unidades devem.
+- **Extratos protegidos**: extratos bancários costumam listar quem pagou a taxa. Só ficam abertos a todos se a gestão marcar que ocultou esses dados; caso contrário, vão para a pasta restrita (gestão e conselho).
+- **Portaria mínima**: do visitante, só o nome; apagado após 30 dias.
 - **Arquivos privados** (bucket sem acesso público), links temporários de 1 hora, pastas com regras próprias (fotos de chamados só para autor e gestão; documentos restritos só para gestão/conselho).
 - **Fotos sem metadados** de localização (`exif: false`).
 - **Auditoria** automática de alterações em finanças, cadastro de moradores e documentos.

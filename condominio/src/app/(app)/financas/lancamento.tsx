@@ -17,6 +17,8 @@ export default function NovoLancamento() {
   const [valor, setValor] = useState('');
   const [data, setData] = useState<string | null>(isoData(new Date()));
   const [fornecedor, setFornecedor] = useState('');
+  const [nota, setNota] = useState('');
+  const [forma, setForma] = useState<string | null>(null);
   const [comprovante, setComprovante] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   async function salvar() {
@@ -29,6 +31,7 @@ export default function NovoLancamento() {
       const { error } = await supabase.from('lancamentos').insert({
         condominio_id: condominioId, tipo, categoria, descricao: descricao.trim() || categoria, valor: v, data,
         fornecedor: fornecedor.trim() || null, comprovante_path: caminho,
+        nota_fiscal: nota.trim() || null, forma_pagamento: forma,
       });
       if (error) throw error;
       router.back();
@@ -47,8 +50,10 @@ export default function NovoLancamento() {
       <Campo rotulo="Descrição" valor={descricao} aoMudar={setDescricao} placeholder="Ex.: Conta de água de outubro" />
       <CampoData rotulo="Data" valor={data} aoMudar={setData} atalhos={false} />
       {tipo === 'despesa' ? <Campo rotulo="Fornecedor" ajuda="Opcional" valor={fornecedor} aoMudar={setFornecedor} /> : null}
+      {tipo === 'despesa' ? <Campo rotulo="Nº da nota fiscal ou recibo" ajuda="Opcional" valor={nota} aoMudar={setNota} /> : null}
+      <Opcoes rotulo="Forma de pagamento" valor={forma} aoMudar={setForma} opcoes={['Boleto', 'Pix', 'Transferência', 'Débito automático', 'Dinheiro'].map((x) => ({ valor: x, nome: x }))} />
       <Texto negrito>Comprovante (nota fiscal ou recibo)</Texto>
-      <Texto tamanho="pequeno" suave>Fica visível para os moradores, como prestação de contas. Não fotografe documentos com dados pessoais.</Texto>
+      <Texto tamanho="pequeno" suave>Fica visível para os moradores, como prestação de contas. Se a nota for de pessoa física (autônomo), cubra o CPF antes de fotografar.</Texto>
       {comprovante ? <Texto>📎 Comprovante anexado</Texto> : null}
       <Botao tipo="secundario" icone="camera-outline" titulo={comprovante ? 'Trocar foto do comprovante' : 'Fotografar comprovante'} aoTocar={async () => setComprovante(await escolherFoto('camera'))} />
       <Botao tipo="secundario" icone="images-outline" titulo="Escolher da galeria" aoTocar={async () => setComprovante(await escolherFoto('galeria'))} />

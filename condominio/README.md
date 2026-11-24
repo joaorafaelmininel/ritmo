@@ -8,8 +8,8 @@ Aplicativo (iOS e Android) de gestão e comunicação para condomínios, organiz
 
 | Dimensão | Para o morador | Para a gestão |
 |---|---|---|
-| **Financeira** | Prestação de contas do mês (entrou/saiu, para onde foi o dinheiro, comprovantes), inadimplência agregada, “Meus boletos” com Pix copia e cola | Lançar receitas e despesas com foto do comprovante, gerar cobranças do mês para todas as unidades, marcar pagamentos |
-| **Operacional** | Pedir conserto (com foto) e acompanhar, reservar salão/churrasqueira em lista de dias, avisos de encomenda, calendário de manutenções | Responder e mudar situação de chamados, aprovar reservas, registrar encomendas (avisa o morador), registrar manutenções (calcula a próxima) |
+| **Finanças** (transparência total) | Saúde financeira (dinheiro em caixa, resultado do ano, inadimplência, orçamento usado), mês a mês, despesas e receitas por categoria, notas fiscais de cada pagamento, extratos e saldos, orçamento previsto × realizado, balancetes, pareceres do conselho, contratos, seguro e laudos, “Meus boletos” com Pix | Lançar receitas/despesas com nota, registrar saldos e extratos (com proteção LGPD), cadastrar orçamento, publicar documentos por classificação, gerar cobranças |
+| **Dia a dia** (operacional) | Quem está de plantão agora, comunicados de serviço, avisar a portaria sobre visitas/prestadores/entregas, autorizar pelo app quem chegou sem aviso, encomendas, ocorrências com foto, reservas, manutenções | Portaria: painel com esperados do dia, “chegou alguém sem aviso” (pergunta ao morador), registro de encomendas e comunicados. Gestão: escala da equipe, ocorrências, reservas, manutenções |
 | **Comunidade** | Avisos (com “Ouvir em voz alta”), enquetes com voto secreto por unidade, classificados entre vizinhos, telefones úteis e de emergência | Publicar avisos com notificação, ver quantos leram, criar enquetes |
 | **Desenvolvimento** | Plano de gestão aberto com andamento de cada projeto, ideias com apoios, documentos (convenção, atas, balancetes) | Cadastrar projetos e processos por dimensão, atualizar andamento, responder ideias, publicar documentos |
 
@@ -42,7 +42,7 @@ docs/                    LGPD, propriedade intelectual, acessibilidade, escala
 
 1. Crie um projeto em [supabase.com](https://supabase.com) **na região South America (São Paulo)**.
 2. Rode as migrações, em ordem, no *SQL Editor* (ou `npx supabase db push` com o CLI):
-   `20261124000001_estrutura.sql` → `20261124000002_seguranca.sql` → `20261124000003_modelo_inicial.sql`.
+   `20261124000001_estrutura.sql` → `20261124000002_seguranca.sql` → `20261124000003_modelo_inicial.sql` → `20261124000004_transparencia_dia_a_dia.sql`.
 3. **E-mail com código** (*Authentication → Email Templates → Magic Link*): troque o conteúdo para mostrar o código, por exemplo:
    ```html
    <h2>Seu código de acesso</h2>

@@ -2,7 +2,8 @@
 //  - todos os moradores, quando a gestão publica um aviso;
 //  - os moradores da unidade, quando a portaria registra uma encomenda;
 //  - quem reservou, quando a gestão confirma/recusa uma reserva;
-//  - quem abriu o chamado, quando a gestão responde.
+//  - quem abriu o chamado, quando a gestão responde;
+//  - a unidade, quando alguém chega na portaria; a portaria, quando o morador responde.
 // A função confere, com o login de quem chamou, se ela tem permissão para isso.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -11,7 +12,7 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-type Pedido = { tipo: 'aviso' | 'encomenda' | 'reserva' | 'chamado'; id: string };
+type Pedido = { tipo: 'aviso' | 'encomenda' | 'reserva' | 'chamado' | 'portaria'; id: string };
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -67,6 +68,25 @@ Deno.serve(async (req) => {
     titulo = 'Seu chamado foi atualizado';
     corpo = c.titulo;
     rota = `/chamados/${id}`;
+  } else if (tipo === 'portaria') {
+    const { data: p } = await usuario.from('portaria').select('condominio_id, unidade_id, nome, status, tipo').eq('id', id).single();
+    if (!p) return json({ erro: 'Registro não encontrado.' }, 404);
+    condominio = p.condominio_id;
+    if (await pode(usuario, 'e_portaria', condominio!)) {
+      // Portaria → moradores da unidade
+      const { data } = await admin.from('membros').select('perfil_id').eq('unidade_id', p.unidade_id).eq('ativo', true);
+      destinatarios = (data ?? []).map((m) => m.perfil_id);
+      titulo = p.status === 'na_portaria' ? 'Alguém na portaria para você' : 'Sua visita chegou';
+      corpo = p.status === 'na_portaria' ? `${p.nome} — toque para autorizar ou não` : `${p.nome} entrou no condomínio`;
+      rota = '/portaria';
+    } else {
+      // Morador respondeu → equipe da portaria
+      const { data } = await admin.from('membros').select('perfil_id').eq('condominio_id', condominio).eq('ativo', true).eq('papel', 'portaria');
+      destinatarios = (data ?? []).map((m) => m.perfil_id);
+      titulo = p.status === 'autorizado' ? 'Entrada autorizada' : p.status === 'negado' ? 'Entrada NÃO autorizada' : 'Aviso cancelado';
+      corpo = p.nome;
+      rota = '/portaria';
+    }
   } else {
     return json({ erro: 'Tipo inválido.' }, 400);
   }

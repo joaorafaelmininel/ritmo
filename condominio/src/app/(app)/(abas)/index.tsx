@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { RespostaPortaria } from '@/components/respostaPortaria';
 import { Botao, Cartao, Selo, Tela, Texto } from '@/components/ui';
 import { quando, nomeUnidade, saudacao } from '@/lib/formato';
 import { useResumo } from '@/lib/resumo';
@@ -11,6 +12,9 @@ import { espaco, useTema } from '@/lib/tema';
 import { Dimensao, DIMENSOES } from '@/lib/tipos';
 
 const ORDEM: Dimensao[] = ['financeira', 'comunidade', 'operacional', 'desenvolvimento'];
+const ROTAS: Record<Dimensao, string> = {
+  financeira: '/financas', comunidade: '/dimensao/comunidade', operacional: '/dia-a-dia', desenvolvimento: '/dimensao/desenvolvimento',
+};
 
 /** Botão grande e colorido de uma dimensão, com explicação curta embaixo do nome. */
 function BotaoDimensao({ d, contador }: { d: Dimensao; contador?: number }) {
@@ -18,7 +22,7 @@ function BotaoDimensao({ d, contador }: { d: Dimensao; contador?: number }) {
   const info = DIMENSOES[d];
   return (
     <Pressable
-      onPress={() => router.push(`/dimensao/${d}`)}
+      onPress={() => router.push(ROTAS[d] as never)}
       accessibilityRole="button"
       accessibilityLabel={`${info.botao}: ${info.descricao}${contador ? `. ${contador} novidade${contador > 1 ? 's' : ''}` : ''}`}
       style={({ pressed }) => ({
@@ -52,7 +56,7 @@ export default function Inicio() {
   const contadores: Partial<Record<Dimensao, number>> = {
     financeira: dados?.cobranca ? 1 : 0,
     comunidade: dados?.naoLidos ?? 0,
-    operacional: (dados?.encomendas ?? 0) + (eGestor ? (dados?.ocorrenciasAbertas ?? 0) + (dados?.paraAprovar ?? 0) + (dados?.manutencoesVencidas ?? 0) : 0),
+    operacional: (dados?.encomendas ?? 0) + (dados?.portaria.length ?? 0) + (eGestor ? (dados?.ocorrenciasAbertas ?? 0) + (dados?.paraAprovar ?? 0) + (dados?.manutencoesVencidas ?? 0) : 0),
   };
   const avisos = (dados?.avisos ?? []).slice(0, 3);
   const primeiroNome = nome.split(' ')[0];
@@ -67,6 +71,9 @@ export default function Inicio() {
             {membro?.unidades ? ` · ${nomeUnidade(membro.unidades)}` : ''}
           </Texto>
         </View>
+
+        {/* Urgente: alguém na portaria esperando autorização */}
+        {dados?.portaria.map((r) => <RespostaPortaria key={r.id} r={r} aoResponder={recarregar} />)}
 
         {/* As quatro dimensões do plano de gestão */}
         <View style={{ gap: espaco.s }}>

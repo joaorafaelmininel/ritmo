@@ -10,7 +10,7 @@ import { Aviso, CATEGORIAS_AVISO } from '@/lib/tipos';
 
 export default function Avisos() {
   const { c } = useTema();
-  const { condominioId, eGestor, sessao } = useSessao();
+  const { condominioId, eGestor, ePortaria, sessao } = useSessao();
   const { dados, erro, carregando, recarregar } = useConsulta(async () => {
     const [a, l] = await Promise.all([
       supabase.from('avisos').select('id, titulo, corpo, categoria, importante, fixado, publicado_em')
@@ -24,6 +24,7 @@ export default function Avisos() {
   return (
     <Tela aoAtualizar={recarregar} atualizando={carregando && !!dados}>
       {eGestor ? <Botao icone="add-circle-outline" titulo="Escrever novo aviso" aoTocar={() => router.push('/aviso/novo')} /> : null}
+      {ePortaria && !eGestor ? <Botao icone="add-circle-outline" titulo="Publicar comunicado do dia a dia" aoTocar={() => router.push('/aviso/novo?categoria=operacional')} /> : null}
       {erro ? <Erro texto={erro} aoTentar={recarregar} /> : null}
       {!dados && carregando ? <Carregando /> : null}
       {dados?.length === 0 ? <Vazio icone="megaphone-outline" texto="Nenhum aviso por enquanto." /> : null}

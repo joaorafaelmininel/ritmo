@@ -35,3 +35,13 @@ export async function linkArquivo(caminho: string) {
   if (error) throw error;
   return data.signedUrl;
 }
+
+/** Abre um arquivo privado (PDF ou imagem) no navegador do celular. */
+export async function abrirArquivo(caminho: string) {
+  const Linking = await import('expo-linking');
+  try {
+    await Linking.openURL(await linkArquivo(caminho));
+  } catch {
+    Alert.alert('Não foi possível abrir', 'Verifique a internet e tente de novo.');
+  }
+}

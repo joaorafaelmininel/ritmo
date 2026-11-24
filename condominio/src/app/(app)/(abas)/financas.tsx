@@ -1,134 +1,163 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Botao, Carregando, Cartao, Linha, Progresso, Subtitulo, Tela, Texto } from '@/components/ui';
-import { linkArquivo } from '@/lib/arquivos';
+import { ItemLista } from '@/components/lista';
+import { Botao, Carregando, Cartao, Erro, Linha, Progresso, Subtitulo, Tela, Texto } from '@/components/ui';
 import { useConsulta } from '@/lib/consulta';
-import { dataCurta, isoData, moeda, nomeMes } from '@/lib/formato';
+import { dataLocal, isoData, moeda, nomeMes } from '@/lib/formato';
 import { useSessao } from '@/lib/sessao';
 import { supabase } from '@/lib/supabase';
-import { espaco, useTema } from '@/lib/tema';
-import { Lancamento } from '@/lib/tipos';
-import * as Linking from 'expo-linking';
+import { useTema } from '@/lib/tema';
+import { ContaBancaria, DOCS_FINANCEIROS, Saldo } from '@/lib/tipos';
 
-function Seta({ nome, rotulo, aoTocar, desativado }: { nome: 'chevron-back' | 'chevron-forward'; rotulo: string; aoTocar: () => void; desativado?: boolean }) {
-  const { c } = useTema();
-  return (
-    <Pressable
-      onPress={aoTocar}
-      disabled={desativado}
-      accessibilityRole="button"
-      accessibilityLabel={rotulo}
-      accessibilityState={{ disabled: desativado }}
-      style={{ width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: c.primaria, alignItems: 'center', justifyContent: 'center', opacity: desativado ? 0.3 : 1 }}>
-      <Ionicons name={nome} size={30} color={c.primaria} />
-    </Pressable>
-  );
-}
+type Mov = { tipo: 'receita' | 'despesa'; valor: number; data: string };
 
-// Prestação de contas aberta: todo morador vê receitas e despesas do condomínio.
+// Painel de transparência: a saúde financeira do condomínio em uma tela,
+// e todos os documentos organizados por classificação logo abaixo.
 export default function Financas() {
   const { c } = useTema();
   const { condominioId, eGestor } = useSessao();
   const hoje = new Date();
-  const [mes, setMes] = useState(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+  const ano = hoje.getFullYear();
 
-  const { dados, carregando, recarregar } = useConsulta(async () => {
-    const inicio = isoData(mes);
-    const fim = isoData(new Date(mes.getFullYear(), mes.getMonth() + 1, 0));
-    const [l, i] = await Promise.all([
-      supabase.from('lancamentos').select('*').eq('condominio_id', condominioId).gte('data', inicio).lte('data', fim).order('data', { ascending: false }).returns<Lancamento[]>(),
+  const { dados, erro, carregando, recarregar } = useConsulta(async () => {
+    const inicio12 = isoData(new Date(ano, hoje.getMonth() - 11, 1));
+    const [contas, saldos, movs, inad, orc] = await Promise.all([
+      supabase.from('contas_bancarias').select('*').eq('condominio_id', condominioId).eq('ativa', true).order('ordem').returns<ContaBancaria[]>(),
+      supabase.from('saldos').select('*').eq('condominio_id', condominioId).order('competencia', { ascending: false }).limit(60).returns<Saldo[]>(),
+      supabase.from('lancamentos').select('tipo, valor, data').eq('condominio_id', condominioId).gte('data', inicio12).returns<Mov[]>(),
       supabase.rpc('resumo_inadimplencia', { p_condominio: condominioId }),
+      supabase.from('orcamento').select('valor_previsto').eq('condominio_id', condominioId).eq('ano', ano).eq('tipo', 'despesa'),
     ]);
-    const inad = (i.data as { unidades_total: number; unidades_em_atraso: number; valor_em_atraso: number }[] | null)?.[0] ?? null;
-    return { data: { lancamentos: l.data ?? [], inad }, error: l.error };
-  }, [condominioId, mes.getTime()]);
+    return {
+      data: {
+        contas: contas.data ?? [],
+        saldos: saldos.data ?? [],
+        movs: movs.data ?? [],
+        inad: (inad.data as { unidades_total: number; unidades_em_atraso: number; valor_em_atraso: number }[] | null)?.[0] ?? null,
+        previstoAno: (orc.data ?? []).reduce((s, o) => s + Number(o.valor_previsto), 0),
+      },
+      error: contas.error ?? movs.error,
+    };
+  }, [condominioId]);
 
-  const mudarMes = (d: number) => setMes(new Date(mes.getFullYear(), mes.getMonth() + d, 1));
-  const ehMesAtual = mes.getFullYear() === hoje.getFullYear() && mes.getMonth() === hoje.getMonth();
+  if (erro && !dados) return <Tela><Erro texto={erro} aoTentar={recarregar} /></Tela>;
+  if (!dados) return <Carregando />;
 
-  const receitas = dados?.lancamentos.filter((l) => l.tipo === 'receita').reduce((s, l) => s + Number(l.valor), 0) ?? 0;
-  const despesas = dados?.lancamentos.filter((l) => l.tipo === 'despesa').reduce((s, l) => s + Number(l.valor), 0) ?? 0;
-  const porCategoria = Object.entries(
-    (dados?.lancamentos ?? []).filter((l) => l.tipo === 'despesa').reduce<Record<string, number>>((acc, l) => {
-      acc[l.categoria] = (acc[l.categoria] ?? 0) + Number(l.valor);
-      return acc;
-    }, {}),
-  ).sort((a, b) => b[1] - a[1]);
+  // Saldo mais recente de cada conta
+  const ultimos = dados.contas.map((ct) => ({ conta: ct, saldo: dados.saldos.find((s) => s.conta_id === ct.id) }));
+  const comSaldo = ultimos.filter((u) => u.saldo);
+  const saldoTotal = comSaldo.reduce((s, u) => s + Number(u.saldo!.saldo_final), 0);
+  const posicao = comSaldo.length ? comSaldo.map((u) => u.saldo!.competencia).sort().reverse()[0] : null;
 
+  const doAno = dados.movs.filter((m) => m.data.startsWith(String(ano)));
+  const soma = (l: Mov[], t: Mov['tipo']) => l.filter((m) => m.tipo === t).reduce((s, m) => s + Number(m.valor), 0);
+  const receitasAno = soma(doAno, 'receita');
+  const despesasAno = soma(doAno, 'despesa');
+
+  const meses = Array.from({ length: 6 }, (_, i) => new Date(ano, hoje.getMonth() - i, 1)).map((d) => {
+    const chave = isoData(d).slice(0, 7);
+    const l = dados.movs.filter((m) => m.data.startsWith(chave));
+    return { d, chave, resultado: soma(l, 'receita') - soma(l, 'despesa'), vazio: l.length === 0 };
+  });
+
+  const pctInad = dados.inad?.unidades_total ? Math.round((dados.inad.unidades_em_atraso / dados.inad.unidades_total) * 100) : 0;
+  const pctOrc = dados.previstoAno ? Math.round((despesasAno / dados.previstoAno) * 100) : null;
+  const esperadoAteAgora = Math.round(((hoje.getMonth() + 1) / 12) * 100);
 
   return (
-    <Tela aoAtualizar={recarregar} atualizando={carregando && !!dados}>
-      <Linha style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-        <Seta rotulo="Mês anterior" nome="chevron-back" aoTocar={() => mudarMes(-1)} />
-        <Texto tamanho="subtitulo" negrito centro style={{ flex: 1 }}>
-          {nomeMes(mes.getMonth())} de {mes.getFullYear()}
-        </Texto>
-        <Seta rotulo="Próximo mês" nome="chevron-forward" aoTocar={() => mudarMes(1)} desativado={ehMesAtual} />
-      </Linha>
+    <Tela aoAtualizar={recarregar} atualizando={carregando}>
+      <Texto suave>Tudo o que entra e sai do condomínio, aberto a todos os moradores.</Texto>
 
-      {!dados ? <Carregando /> : (
-        <>
-          <Cartao>
-            <Linha style={{ justifyContent: 'space-between' }}>
-              <Texto>Entrou</Texto>
-              <Texto negrito cor={c.sucesso}>{moeda(receitas)}</Texto>
-            </Linha>
-            <Linha style={{ justifyContent: 'space-between' }}>
-              <Texto>Saiu</Texto>
-              <Texto negrito cor={c.perigo}>{moeda(despesas)}</Texto>
-            </Linha>
-            <View style={{ height: 1, backgroundColor: c.borda, marginVertical: espaco.xs }} />
-            <Linha style={{ justifyContent: 'space-between' }}>
-              <Texto negrito>Resultado do mês</Texto>
-              <Texto tamanho="subtitulo" negrito cor={receitas - despesas >= 0 ? c.sucesso : c.perigo}>{moeda(receitas - despesas)}</Texto>
-            </Linha>
-          </Cartao>
+      {eGestor ? (
+        <Cartao destaque="primaria">
+          <Texto negrito>Gestão</Texto>
+          <Botao icone="add-circle-outline" titulo="Lançar receita ou despesa" aoTocar={() => router.push('/financas/lancamento')} />
+          <Linha>
+            <Botao tipo="secundario" titulo="Saldo e extrato" aoTocar={() => router.push('/financas/extratos')} style={{ flexGrow: 1 }} />
+            <Botao tipo="secundario" titulo="Enviar documento" aoTocar={() => router.push('/financas/documentos?cat=balancete')} style={{ flexGrow: 1 }} />
+          </Linha>
+        </Cartao>
+      ) : null}
 
-          {dados.inad ? (
-            <Cartao>
-              <Texto negrito>Inadimplência hoje</Texto>
-              <Texto>
-                {dados.inad.unidades_em_atraso} de {dados.inad.unidades_total} unidades com taxa em atraso ({moeda(dados.inad.valor_em_atraso)}).
-              </Texto>
-              <Texto tamanho="pequeno" suave>Por respeito à privacidade, não mostramos quais unidades.</Texto>
-            </Cartao>
-          ) : null}
-
-          <Botao tipo="secundario" icone="receipt-outline" titulo="Meus boletos" aoTocar={() => router.push('/cobrancas')} />
-          {eGestor ? <Botao icone="add-circle-outline" titulo="Lançar receita ou despesa" aoTocar={() => router.push('/financas/lancamento')} /> : null}
-
-          {porCategoria.length ? <Subtitulo>Para onde foi o dinheiro</Subtitulo> : null}
-          {porCategoria.map(([cat, v]) => (
-            <View key={cat} style={{ gap: 4 }}>
-              <Linha style={{ justifyContent: 'space-between' }}>
-                <Texto>{cat}</Texto>
-                <Texto negrito>{moeda(v)}</Texto>
+      <Subtitulo>Saúde financeira</Subtitulo>
+      <Cartao>
+        <Texto negrito>Dinheiro em caixa</Texto>
+        {comSaldo.length ? (
+          <>
+            <Texto tamanho="grande" negrito cor={saldoTotal >= 0 ? c.sucesso : c.perigo}>{moeda(saldoTotal)}</Texto>
+            {comSaldo.map((u) => (
+              <Linha key={u.conta.id} style={{ justifyContent: 'space-between' }}>
+                <Texto>{u.conta.nome}</Texto>
+                <Texto negrito>{moeda(u.saldo!.saldo_final)}</Texto>
               </Linha>
-              <Progresso valor={(v / despesas) * 100} cor={c.perigo} />
-            </View>
-          ))}
+            ))}
+            {posicao ? <Texto tamanho="pequeno" suave>Saldos de fim de {nomeMes(dataLocal(posicao).getMonth())}/{dataLocal(posicao).getFullYear()}, conforme extratos.</Texto> : null}
+          </>
+        ) : (
+          <Texto suave>A gestão ainda não registrou os saldos das contas.</Texto>
+        )}
+      </Cartao>
 
-          <Subtitulo>Todos os lançamentos</Subtitulo>
-          {dados.lancamentos.length === 0 ? <Texto suave>Nenhum lançamento neste mês.</Texto> : null}
-          {dados.lancamentos.map((l) => (
-            <Cartao
-              key={l.id}
-              aoTocar={l.comprovante_path ? async () => Linking.openURL(await linkArquivo(l.comprovante_path!)) : undefined}
-              rotulo={`${l.descricao}, ${moeda(l.valor)}`}>
-              <Linha style={{ justifyContent: 'space-between' }}>
-                <Texto negrito style={{ flex: 1 }}>{l.descricao}</Texto>
-                <Texto negrito cor={l.tipo === 'receita' ? c.sucesso : c.perigo}>{l.tipo === 'receita' ? '+' : '−'} {moeda(l.valor)}</Texto>
-              </Linha>
-              <Texto tamanho="pequeno" suave>
-                {dataCurta(l.data)} · {l.categoria}{l.fornecedor ? ` · ${l.fornecedor}` : ''}{l.comprovante_path ? ' · 📎 ver comprovante' : ''}
-              </Texto>
-            </Cartao>
-          ))}
-        </>
-      )}
+      <Cartao>
+        <Texto negrito>Em {ano} até agora</Texto>
+        <Linha style={{ justifyContent: 'space-between' }}><Texto>Entrou</Texto><Texto negrito cor={c.sucesso}>{moeda(receitasAno)}</Texto></Linha>
+        <Linha style={{ justifyContent: 'space-between' }}><Texto>Saiu</Texto><Texto negrito cor={c.perigo}>{moeda(despesasAno)}</Texto></Linha>
+        <View style={{ height: 1, backgroundColor: c.borda }} />
+        <Linha style={{ justifyContent: 'space-between' }}>
+          <Texto negrito>{receitasAno - despesasAno >= 0 ? 'Sobrou' : 'Faltou'}</Texto>
+          <Texto tamanho="subtitulo" negrito cor={receitasAno - despesasAno >= 0 ? c.sucesso : c.perigo}>{moeda(Math.abs(receitasAno - despesasAno))}</Texto>
+        </Linha>
+      </Cartao>
+
+      {pctOrc !== null ? (
+        <Cartao destaque={pctOrc > esperadoAteAgora + 10 ? 'alerta' : undefined}>
+          <Texto negrito>Orçamento do ano: {pctOrc}% já gasto</Texto>
+          <Progresso valor={pctOrc} cor={pctOrc > 100 ? c.perigo : c.primaria} />
+          <Texto tamanho="pequeno" suave>
+            Até {nomeMes(hoje.getMonth())}, o esperado seria cerca de {esperadoAteAgora}%. Previsto para o ano: {moeda(dados.previstoAno)}.
+          </Texto>
+        </Cartao>
+      ) : null}
+
+      {dados.inad ? (
+        <Cartao destaque={pctInad >= 10 ? 'alerta' : undefined}>
+          <Texto negrito>Inadimplência: {pctInad}% das unidades</Texto>
+          <Texto>{dados.inad.unidades_em_atraso} de {dados.inad.unidades_total} unidades com taxa atrasada, somando {moeda(dados.inad.valor_em_atraso)}.</Texto>
+          <Texto tamanho="pequeno" suave>Por respeito à privacidade, não mostramos quais unidades.</Texto>
+        </Cartao>
+      ) : null}
+
+      <Cartao>
+        <Texto negrito>Resultado mês a mês</Texto>
+        {meses.map((m) => (
+          <Linha key={m.chave} style={{ justifyContent: 'space-between', minHeight: 44 }}>
+            <Texto style={{ textTransform: 'capitalize' }}>{nomeMes(m.d.getMonth())}</Texto>
+            {m.vazio ? <Texto suave>sem lançamentos</Texto> : (
+              <Texto negrito cor={m.resultado >= 0 ? c.sucesso : c.perigo}>{m.resultado >= 0 ? '+' : '−'} {moeda(Math.abs(m.resultado))}</Texto>
+            )}
+          </Linha>
+        ))}
+      </Cartao>
+
+      <Subtitulo>Movimentação</Subtitulo>
+      <ItemLista item={{ titulo: 'Receitas e despesas do mês', detalhe: 'Cada lançamento, mês a mês', icone: 'swap-vertical-outline', rota: '/financas/mes' }} />
+      <ItemLista item={{ titulo: 'Despesas por categoria', detalhe: 'Água, energia, portaria, manutenção…', icone: 'pie-chart-outline', rota: '/financas/categorias?tipo=despesa' }} />
+      <ItemLista item={{ titulo: 'Receitas por categoria', detalhe: 'Taxas, multas, aluguel de espaços…', icone: 'trending-up-outline', rota: '/financas/categorias?tipo=receita' }} />
+      <ItemLista item={{ titulo: 'Notas fiscais e comprovantes', detalhe: 'O documento de cada pagamento', icone: 'receipt-outline', rota: '/financas/notas' }} />
+
+      <Subtitulo>Contas e planejamento</Subtitulo>
+      <ItemLista item={{ titulo: 'Extratos e saldos bancários', detalhe: 'Conta corrente, fundo de reserva', icone: 'business-outline', rota: '/financas/extratos' }} />
+      <ItemLista item={{ titulo: 'Orçamento: previsto × realizado', detalhe: 'Quanto foi planejado e quanto foi gasto', icone: 'calculator-outline', rota: '/financas/orcamento' }} />
+
+      <Subtitulo>Documentos oficiais</Subtitulo>
+      {Object.entries(DOCS_FINANCEIROS).map(([cat, d]) => (
+        <ItemLista key={cat} item={{ titulo: d.nome, detalhe: d.explicacao, icone: d.icone as never, rota: `/financas/documentos?cat=${cat}` }} />
+      ))}
+
+      <Subtitulo>Minha unidade</Subtitulo>
+      <ItemLista item={{ titulo: 'Meus boletos', detalhe: 'Taxa do condomínio e Pix', icone: 'wallet-outline', rota: '/cobrancas' }} />
+      <ItemLista item={{ titulo: 'Projetos financeiros do plano de gestão', icone: 'map-outline', rota: '/plano?dimensao=financeira' }} />
     </Tela>
   );
 }
