@@ -12,7 +12,7 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-type Pedido = { tipo: 'aviso' | 'encomenda' | 'reserva' | 'chamado' | 'portaria'; id: string };
+type Pedido = { tipo: 'aviso' | 'encomenda' | 'reserva' | 'chamado' | 'portaria' | 'pet_perdido' | 'pet_visto'; id: string };
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -87,6 +87,31 @@ Deno.serve(async (req) => {
       corpo = p.nome;
       rota = '/portaria';
     }
+  } else if (tipo === 'pet_perdido') {
+    // Só a unidade dona do pet consegue marcar "perdido" (RLS); aqui confirmamos que está marcado.
+    const { data: pet } = await usuario.from('pets').select('condominio_id, nome, perdido, unidade_id').eq('id', id).single();
+    if (!pet || !pet.perdido) return json({ erro: 'Pet não está marcado como perdido.' }, 400);
+    const { data: minhas } = await usuario.rpc('minhas_unidades');
+    if (!(minhas ?? []).includes(pet.unidade_id)) return json({ erro: 'Sem permissão.' }, 403);
+    condominio = pet.condominio_id;
+    const { data } = await admin.from('membros').select('perfil_id').eq('condominio_id', condominio).eq('ativo', true);
+    destinatarios = (data ?? []).map((m) => m.perfil_id);
+    titulo = `Pet perdido: ${pet.nome}`;
+    corpo = 'Viu por aí? Toque para ver a foto e avisar o dono.';
+    rota = `/pets/${id}`;
+  } else if (tipo === 'pet_visto') {
+    // id = avistamento criado por quem chamou
+    const { data: av } = await usuario.from('pets_avistamentos').select('local, autor_id, pets(id, nome, unidade_id, condominio_id)').eq('id', id).single();
+    const pet = av?.pets as unknown as { id: string; nome: string; unidade_id: string; condominio_id: string } | null;
+    if (!av || !pet) return json({ erro: 'Aviso não encontrado.' }, 404);
+    const { data: { user } } = await usuario.auth.getUser();
+    if (av.autor_id !== user?.id) return json({ erro: 'Sem permissão.' }, 403);
+    condominio = pet.condominio_id;
+    const { data } = await admin.from('membros').select('perfil_id').eq('unidade_id', pet.unidade_id).eq('ativo', true);
+    destinatarios = (data ?? []).map((m) => m.perfil_id);
+    titulo = `Encontraram ${pet.nome}!`;
+    corpo = av.local ? `Visto em: ${av.local}` : 'Um vizinho viu seu pet. Toque para ver.';
+    rota = `/pets/${pet.id}`;
   } else {
     return json({ erro: 'Tipo inválido.' }, 400);
   }

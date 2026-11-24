@@ -28,6 +28,8 @@
 | Leituras de avisos | Saber se o recado chegou | Legítimo interesse | Gestão (só contagem) | 2 anos |
 | Encomendas | Aviso de chegada | Legítimo interesse | Unidade, portaria | 6 meses após retirada |
 | Nome de visitantes e prestadores | Controle de acesso pela portaria | Legítimo interesse (segurança) | Unidade visitada, portaria | **30 dias** (sem documento, placa ou foto) |
+| Pets (nome, foto, descrição, unidade) | Devolver pets que fogem | Consentimento (cadastro opcional, com aviso de que a unidade aparece) | Moradores | Até o dono remover |
+| Prestadores indicados (nome, telefone) | Recomendação entre vizinhos | Consentimento do prestador (confirmado por quem indica) | Moradores | Até ser removido |
 | Equipe (primeiro nome, função, horário) | Saber quem está em serviço | Legítimo interesse / execução de contrato de trabalho | Moradores | Enquanto estiver na escala |
 | Extratos bancários | Transparência das contas | Obrigação legal (prestação de contas) | Todos **só se** a gestão confirmar que ocultou dados de moradores; senão, gestão e conselho | 5 anos |
 

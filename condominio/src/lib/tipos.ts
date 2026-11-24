@@ -76,9 +76,9 @@ export const NOME_PAPEL: Record<Papel, string> = {
 // As quatro dimensões do plano de gestão, com nomes simples para o morador.
 export const DIMENSOES: Record<Dimensao, { nome: string; botao: string; apelido: string; descricao: string; icone: string; cor: string }> = {
   financeira: { nome: 'Financeira', botao: 'Finanças', apelido: 'Dinheiro do condomínio', descricao: 'Saúde financeira, notas, balancetes e extratos', icone: 'wallet-outline', cor: '#1B6B38' },
-  comunidade: { nome: 'Comunidade', botao: 'Comunidade', apelido: 'Convivência', descricao: 'Avisos, enquetes, vizinhos e telefones', icone: 'people-outline', cor: '#8A3B8F' },
+  comunidade: { nome: 'Comunidade', botao: 'Comunidade', apelido: 'Convivência', descricao: 'Avisos, pets, prestadores e vizinhos', icone: 'people-outline', cor: '#8A3B8F' },
   operacional: { nome: 'Operacional', botao: 'Dia a dia', apelido: 'Dia a dia e manutenção', descricao: 'Portaria, visitas, entregas e ocorrências', icone: 'construct-outline', cor: '#0B4F8A' },
-  desenvolvimento: { nome: 'Desenvolvimento', botao: 'Desenvolvimento', apelido: 'Melhorias e futuro', descricao: 'Plano de gestão, ideias e documentos', icone: 'trending-up-outline', cor: '#7A4300' },
+  desenvolvimento: { nome: 'Desenvolvimento', botao: 'Desenvolvimento', apelido: 'Melhorias e futuro', descricao: 'Calendário do ano, plano de gestão e ideias', icone: 'trending-up-outline', cor: '#7A4300' },
 };
 
 export const STATUS_PROJETO: Record<Projeto['status'], string> = {
@@ -143,4 +143,40 @@ export const STATUS_PORTARIA: Record<RegistroPortaria['status'], { nome: string;
   negado: { nome: 'Não autorizado', tipo: 'perigo' },
   entrou: { nome: 'Entrou', tipo: 'sucesso' },
   cancelado: { nome: 'Cancelado', tipo: 'neutro' },
+};
+
+export type Pet = {
+  id: string; unidade_id: string; nome: string; especie: 'cachorro' | 'gato' | 'ave' | 'outro'; raca: string | null; descricao: string | null;
+  cuidados: string | null; foto_path: string | null; perdido: boolean; perdido_desde: string | null; ativo: boolean; criado_em: string;
+  unidades?: Unidade | null;
+};
+export const ESPECIES: Record<Pet['especie'], { nome: string; emoji: string }> = {
+  cachorro: { nome: 'Cachorro', emoji: '🐶' }, gato: { nome: 'Gato', emoji: '🐱' }, ave: { nome: 'Ave', emoji: '🐦' }, outro: { nome: 'Outro', emoji: '🐾' },
+};
+
+export type Prestador = {
+  id: string; origem: 'indicado' | 'morador'; tipo: string; nome: string; telefone: string | null; descricao: string | null;
+  autor_id: string | null; criado_em: string; perfis?: { nome: string } | null;
+  prestadores_recomendacoes?: { perfil_id: string; comentario: string | null; perfis?: { nome: string } | null }[];
+};
+export const TIPOS_PRESTADOR = [
+  'Eletricista', 'Encanador', 'Pedreiro', 'Pintor', 'Marceneiro', 'Chaveiro', 'Técnico de ar-condicionado', 'Técnico de eletrodomésticos',
+  'Diarista', 'Jardineiro', 'Dedetização', 'Cuidador(a) de idosos', 'Babá', 'Passeador de cães', 'Veterinário', 'Aulas e reforço',
+  'Beleza e estética', 'Alimentação', 'Costura', 'Informática', 'Transporte', 'Outros',
+];
+
+export type Acao = {
+  id: string; titulo: string; descricao: string | null; categoria: string; mes: number; ano: number | null; repete_anualmente: boolean;
+  responsavel: string | null; custo_estimado: number | null;
+};
+export type Execucao = { acao_id: string; ano: number; status: 'agendada' | 'concluida' | 'adiada' | 'cancelada'; data: string | null; observacao: string | null };
+export const CATEGORIAS_ACAO: Record<string, { nome: string; icone: string }> = {
+  poda: { nome: 'Poda e jardim', icone: 'leaf-outline' },
+  manutencao: { nome: 'Manutenção', icone: 'construct-outline' },
+  limpeza: { nome: 'Limpeza', icone: 'water-outline' },
+  obra: { nome: 'Obra / reforma', icone: 'hammer-outline' },
+  seguranca: { nome: 'Segurança', icone: 'shield-outline' },
+  administrativo: { nome: 'Administrativo', icone: 'document-text-outline' },
+  evento: { nome: 'Evento', icone: 'balloon-outline' },
+  outro: { nome: 'Outro', icone: 'ellipsis-horizontal-circle-outline' },
 };

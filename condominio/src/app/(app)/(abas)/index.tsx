@@ -55,7 +55,7 @@ export default function Inicio() {
 
   const contadores: Partial<Record<Dimensao, number>> = {
     financeira: dados?.cobranca ? 1 : 0,
-    comunidade: dados?.naoLidos ?? 0,
+    comunidade: (dados?.naoLidos ?? 0) + (dados?.petsPerdidos ?? 0),
     operacional: (dados?.encomendas ?? 0) + (dados?.portaria.length ?? 0) + (eGestor ? (dados?.ocorrenciasAbertas ?? 0) + (dados?.paraAprovar ?? 0) + (dados?.manutencoesVencidas ?? 0) : 0),
   };
   const avisos = (dados?.avisos ?? []).slice(0, 3);

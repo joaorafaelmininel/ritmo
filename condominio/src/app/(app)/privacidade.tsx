@@ -28,9 +28,9 @@ export default function Privacidade() {
   }, []);
 
   async function baixar() {
-    const { data, error } = await supabase.rpc('meus_dados');
-    if (error) return avisar('Não foi possível gerar', mensagemErro(error));
-    await Share.share({ title: 'Meus dados', message: JSON.stringify(data, null, 2) });
+    const [base, extra] = await Promise.all([supabase.rpc('meus_dados'), supabase.rpc('meus_dados_extra')]);
+    if (base.error) return avisar('Não foi possível gerar', mensagemErro(base.error));
+    await Share.share({ title: 'Meus dados', message: JSON.stringify({ ...(base.data as object), ...((extra.data as object) ?? {}) }, null, 2) });
   }
 
   async function pedir() {

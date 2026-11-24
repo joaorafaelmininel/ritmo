@@ -52,9 +52,9 @@ function Seta({ nome, rotulo, aoTocar, desativado }: { nome: 'chevron-back' | 'c
 }
 
 /** Escolha de mês (ou ano) com setas grandes. */
-export function SeletorPeriodo({ data, aoMudar, modo = 'mes' }: { data: Date; aoMudar: (d: Date) => void; modo?: 'mes' | 'ano' }) {
+export function SeletorPeriodo({ data, aoMudar, modo = 'mes', anosFuturos = 0 }: { data: Date; aoMudar: (d: Date) => void; modo?: 'mes' | 'ano'; anosFuturos?: number }) {
   const hoje = new Date();
-  const atual = modo === 'ano' ? data.getFullYear() >= hoje.getFullYear() : data.getFullYear() === hoje.getFullYear() && data.getMonth() >= hoje.getMonth();
+  const atual = modo === 'ano' && anosFuturos ? data.getFullYear() >= hoje.getFullYear() + anosFuturos : modo === 'ano' ? data.getFullYear() >= hoje.getFullYear() : data.getFullYear() === hoje.getFullYear() && data.getMonth() >= hoje.getMonth();
   const mover = (d: number) => aoMudar(modo === 'ano' ? new Date(data.getFullYear() + d, 0, 1) : new Date(data.getFullYear(), data.getMonth() + d, 1));
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: espaco.s }}>

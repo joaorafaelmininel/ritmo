@@ -10,8 +10,8 @@ Aplicativo (iOS e Android) de gestão e comunicação para condomínios, organiz
 |---|---|---|
 | **Finanças** (transparência total) | Saúde financeira (dinheiro em caixa, resultado do ano, inadimplência, orçamento usado), mês a mês, despesas e receitas por categoria, notas fiscais de cada pagamento, extratos e saldos, orçamento previsto × realizado, balancetes, pareceres do conselho, contratos, seguro e laudos, “Meus boletos” com Pix | Lançar receitas/despesas com nota, registrar saldos e extratos (com proteção LGPD), cadastrar orçamento, publicar documentos por classificação, gerar cobranças |
 | **Dia a dia** (operacional) | Quem está de plantão agora, comunicados de serviço, avisar a portaria sobre visitas/prestadores/entregas, autorizar pelo app quem chegou sem aviso, encomendas, ocorrências com foto, reservas, manutenções | Portaria: painel com esperados do dia, “chegou alguém sem aviso” (pergunta ao morador), registro de encomendas e comunicados. Gestão: escala da equipe, ocorrências, reservas, manutenções |
-| **Comunidade** | Avisos (com “Ouvir em voz alta”), enquetes com voto secreto por unidade, classificados entre vizinhos, telefones úteis e de emergência | Publicar avisos com notificação, ver quantos leram, criar enquetes |
-| **Desenvolvimento** | Plano de gestão aberto com andamento de cada projeto, ideias com apoios, documentos (convenção, atas, balancetes) | Cadastrar projetos e processos por dimensão, atualizar andamento, responder ideias, publicar documentos |
+| **Comunidade** | Avisos (com “Ouvir em voz alta”), **pets do condomínio** (foto, unidade, “Meu pet fugiu” avisa todos, “Encontrei este pet” avisa o dono), **prestadores indicados** por tipo com recomendações, **negócios de moradores**, enquetes com voto secreto, classificados, telefones úteis | Publicar avisos com notificação, ver quantos leram, criar enquetes, moderar indicações e anúncios |
+| **Desenvolvimento** | **Calendário do ano** (ações planejadas como poda anual e limpeza de calhas, manutenções preventivas projetadas e prazos de projetos, mês a mês), plano de gestão com andamento, ideias com apoios, documentos | Planejar ações (mês, repetição anual, custo estimado, responsável) e marcar como feitas, cadastrar projetos e processos, responder ideias |
 
 Painel da gestão: adesão ao app, pendências, inadimplência, andamento do plano, unidades e **cartões impressos com códigos de acesso**, moradores e funções, pedidos LGPD e registro de alterações.
 
@@ -42,7 +42,7 @@ docs/                    LGPD, propriedade intelectual, acessibilidade, escala
 
 1. Crie um projeto em [supabase.com](https://supabase.com) **na região South America (São Paulo)**.
 2. Rode as migrações, em ordem, no *SQL Editor* (ou `npx supabase db push` com o CLI):
-   `20261124000001_estrutura.sql` → `20261124000002_seguranca.sql` → `20261124000003_modelo_inicial.sql` → `20261124000004_transparencia_dia_a_dia.sql`.
+   `20261124000001_estrutura.sql` → `20261124000002_seguranca.sql` → `20261124000003_modelo_inicial.sql` → `20261124000004_transparencia_dia_a_dia.sql` → `20261124000005_convivencia_calendario.sql`.
 3. **E-mail com código** (*Authentication → Email Templates → Magic Link*): troque o conteúdo para mostrar o código, por exemplo:
    ```html
    <h2>Seu código de acesso</h2>

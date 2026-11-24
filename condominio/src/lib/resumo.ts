@@ -15,6 +15,7 @@ export type Resumo = {
   ocorrenciasAbertas: number;
   manutencoesVencidas: number;
   portaria: RegistroPortaria[];
+  petsPerdidos: number;
 };
 
 /** Números que aparecem como "bolinhas" nos botões (novidades e pendências). */
@@ -26,7 +27,7 @@ export function useResumo() {
     const uid = sessao!.user.id;
     const desde = new Date(Date.now() - 30 * 86400000).toISOString();
     const contar = (q: PromiseLike<{ count: number | null }>) => q.then((r) => r.count ?? 0);
-    const [avisos, lidos, encomendas, cob, paraAprovar, ocorrencias, manutencoes, portaria] = await Promise.all([
+    const [avisos, lidos, encomendas, cob, paraAprovar, ocorrencias, manutencoes, portaria, pets] = await Promise.all([
       supabase.from('avisos').select('id, titulo, importante, publicado_em').eq('condominio_id', condominioId)
         .gte('publicado_em', desde).order('importante', { ascending: false }).order('publicado_em', { ascending: false }).limit(20),
       supabase.from('avisos_leituras').select('aviso_id').eq('perfil_id', uid),
@@ -40,6 +41,7 @@ export function useResumo() {
       unidadeId
         ? supabase.from('portaria').select('*').eq('unidade_id', unidadeId).eq('status', 'na_portaria').returns<RegistroPortaria[]>()
         : Promise.resolve({ data: [] as RegistroPortaria[] }),
+      contar(supabase.from('pets').select('id', { count: 'exact', head: true }).eq('condominio_id', condominioId).eq('perdido', true).eq('ativo', true)),
     ]);
     const lidosSet = new Set((lidos.data ?? []).map((l) => l.aviso_id));
     const lista = (avisos.data ?? []).map((a) => ({ ...a, lido: lidosSet.has(a.id) }));
@@ -53,6 +55,7 @@ export function useResumo() {
         ocorrenciasAbertas: ocorrencias,
         manutencoesVencidas: manutencoes,
         portaria: portaria.data ?? [],
+        petsPerdidos: pets,
       },
       error: avisos.error,
     };

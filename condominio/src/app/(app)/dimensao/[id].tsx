@@ -31,8 +31,11 @@ export default function DimensaoTela() {
     ],
     comunidade: [
       { titulo: 'Avisos', detalhe: 'Recados da gestão', icone: 'megaphone-outline', rota: '/avisos', contador: dados?.naoLidos },
+      { titulo: 'Pets do condomínio', detalhe: dados?.petsPerdidos ? 'Tem pet perdido! Ajude a encontrar' : 'Ache o dono do bichinho que apareceu aí', icone: 'paw-outline', rota: '/pets', contador: dados?.petsPerdidos, destaque: !!dados?.petsPerdidos },
+      { titulo: 'Prestadores indicados', detalhe: 'Eletricista, encanador, diarista… recomendados pelos vizinhos', icone: 'construct-outline', rota: '/prestadores?origem=indicado' },
+      { titulo: 'Negócios de moradores', detalhe: 'Serviços e empresas dos vizinhos', icone: 'storefront-outline', rota: '/prestadores?origem=morador' },
       { titulo: 'Enquetes', detalhe: 'Dê sua opinião', icone: 'checkbox-outline', rota: '/enquetes' },
-      { titulo: 'Vizinhos anunciam', detalhe: 'Vendas, doações e serviços', icone: 'pricetags-outline', rota: '/classificados' },
+      { titulo: 'Vizinhos anunciam', detalhe: 'Vendas, doações e trocas', icone: 'pricetags-outline', rota: '/classificados' },
       { titulo: 'Telefones e emergência', detalhe: 'Um toque para ligar', icone: 'call-outline', rota: '/contatos' },
       plano,
     ],
@@ -45,7 +48,9 @@ export default function DimensaoTela() {
       plano,
     ],
     desenvolvimento: [
-      { titulo: 'Plano de gestão', detalhe: 'Todos os projetos, nas quatro áreas', icone: 'map-outline', rota: '/plano' },
+      { titulo: 'Calendário do ano', detalhe: 'Podas, manutenções e ações planejadas, mês a mês', icone: 'calendar-outline', rota: '/calendario', destaque: true },
+      { titulo: 'Plano de gestão', detalhe: 'Projetos e processos nas quatro áreas', icone: 'map-outline', rota: '/plano' },
+      { titulo: 'Manutenções preventivas', detalhe: 'O que já foi feito e o que vem por aí', icone: 'construct-outline', rota: '/manutencoes', contador: eGestor ? dados?.manutencoesVencidas : 0 },
       { titulo: 'Dar uma ideia', detalhe: 'Sugira melhorias e apoie as dos vizinhos', icone: 'bulb-outline', rota: '/sugestoes' },
       { titulo: 'Documentos', detalhe: 'Convenção, regimento e atas', icone: 'folder-open-outline', rota: '/documentos' },
     ],

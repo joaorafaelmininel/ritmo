@@ -138,6 +138,25 @@ log('Portaria marca entrada', await as(C, `update portaria set status='entrou' w
 log('Gestão vê registros da portaria', await as(A, `select count(*) from portaria`), (v) => n(v) === 2);
 log('A cadastra equipe', await as(A, `insert into equipe (condominio_id,nome,funcao,dias,hora_inicio,hora_fim) values ($1,'João','portaria','{0,1,2,3,4,5,6}','19:00','07:00') returning nome`, [c]));
 log('B vê equipe', await as(B, `select count(*) from equipe`), (v) => n(v) === 1);
+// --- Convivência: pets e prestadores ---
+const [pet] = await as(B, `insert into pets (condominio_id,unidade_id,nome,especie,descricao) values ($1,$2,'Thor','cachorro','Caramelo, coleira azul') returning id`, [c, ub]);
+log('B cadastra pet', pet ? [pet] : pet, (v) => !!v[0]?.id);
+log('B cadastra pet em outra unidade (falha)', await as(B, `insert into pets (condominio_id,unidade_id,nome) values ($1,$2,'X')`, [c, uc]));
+log('C vê pet de B', await as(C, `select count(*) from pets`), (v) => n(v) === 1);
+log('C marca pet de B perdido (ignorado)', await as(C, `update pets set perdido=true where id=$1 returning id`, [pet.id]), (v) => v.length === 0);
+log('B marca perdido', await as(B, `update pets set perdido=true where id=$1 returning perdido_desde is not null p`, [pet.id]), (v) => v[0].p);
+log('C avisa que viu o pet', await as(C, `insert into pets_avistamentos (pet_id, local) values ($1,'No jardim da casa 210') returning 1`, [pet.id]));
+log('B vê avistamento', await as(B, `select count(*) from pets_avistamentos`), (v) => n(v) === 1);
+const [pr] = await as(C, `insert into prestadores (condominio_id,tipo,nome,telefone) values ($1,'Eletricista','Carlos','16999990000') returning id`, [c]);
+log('B recomenda prestador', await as(B, `insert into prestadores_recomendacoes (prestador_id, comentario) values ($1,'Pontual e honesto') returning 1`, [pr.id]));
+log('B edita prestador de C (ignorado)', await as(B, `update prestadores set nome='X' where id=$1 returning id`, [pr.id]), (v) => v.length === 0);
+// --- Calendário anual ---
+log('A ações padrão', await as(A, `select count(*) from acoes_planejadas`), (v) => n(v) === 7);
+const [acao] = await as(A, `select id from acoes_planejadas where categoria='poda'`);
+log('A conclui poda 2026', await as(A, `insert into acoes_execucoes (acao_id, ano, data) values ($1, 2026, '2026-06-15') returning status`, [acao.id]));
+log('B conclui ação (falha)', await as(B, `insert into acoes_execucoes (acao_id, ano) values ($1, 2027)`, [acao.id]));
+log('B vê calendário', await as(B, `select count(*) from acoes_execucoes`), (v) => n(v) === 1);
+log('B envia foto de pet', await as(B, `insert into storage.objects (bucket_id,name,owner_id) values ('arquivos',$1,$2) returning name`, [`${c}/pets/thor.jpg`, B]));
 log('anon vê avisos', await as('', `select count(*) from avisos`), (v) => n(v) === 0);
 console.log(falhas ? `\n${falhas} verificação(ões) falharam` : '\nTodas as verificações passaram');
 process.exit(falhas ? 1 : 0);
