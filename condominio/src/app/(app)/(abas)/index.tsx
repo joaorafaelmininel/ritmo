@@ -1,69 +1,60 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Botao, Cartao, Ladrilho, Subtitulo, Tela, Texto } from '@/components/ui';
-import { useConsulta } from '@/lib/consulta';
-import { dataCurta, isoData, moeda, nomeUnidade, saudacao } from '@/lib/formato';
+import { Botao, Cartao, Selo, Tela, Texto } from '@/components/ui';
+import { quando, nomeUnidade, saudacao } from '@/lib/formato';
+import { useResumo } from '@/lib/resumo';
 import { useSessao } from '@/lib/sessao';
-import { supabase } from '@/lib/supabase';
 import { espaco, useTema } from '@/lib/tema';
-import { DIMENSOES } from '@/lib/tipos';
+import { Dimensao, DIMENSOES } from '@/lib/tipos';
 
-type Resumo = {
-  naoLidos: number;
-  importante: { id: string; titulo: string } | null;
-  encomendas: number;
-  cobranca: { valor: number; vencimento: string } | null;
-  paraAprovar: number;
-  chamadosAbertos: number;
-  manutencoesVencidas: number;
-};
+const ORDEM: Dimensao[] = ['financeira', 'comunidade', 'operacional', 'desenvolvimento'];
+
+/** Botão grande e colorido de uma dimensão, com explicação curta embaixo do nome. */
+function BotaoDimensao({ d, contador }: { d: Dimensao; contador?: number }) {
+  const { f } = useTema();
+  const info = DIMENSOES[d];
+  return (
+    <Pressable
+      onPress={() => router.push(`/dimensao/${d}`)}
+      accessibilityRole="button"
+      accessibilityLabel={`${info.botao}: ${info.descricao}${contador ? `. ${contador} novidade${contador > 1 ? 's' : ''}` : ''}`}
+      style={({ pressed }) => ({
+        minHeight: 104, borderRadius: 20, paddingHorizontal: espaco.m, paddingVertical: espaco.m,
+        backgroundColor: info.cor, flexDirection: 'row', alignItems: 'center', gap: espaco.m, opacity: pressed ? 0.85 : 1,
+      })}>
+      <View>
+        <Ionicons name={info.icone.replace('-outline', '') as never} size={44} color="#fff" />
+        {contador ? (
+          <View style={{ position: 'absolute', top: -10, right: -12, minWidth: 28, height: 28, borderRadius: 14, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 }}>
+            <Text style={{ color: info.cor, fontWeight: '800', fontSize: 16 }}>{contador}</Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={{ flex: 1 }}>
+        {/* Título com limite próprio de ampliação para "Desenvolvimento" caber inteiro */}
+        <Text maxFontSizeMultiplier={1.15} style={{ color: '#fff', fontSize: Math.min(f('subtitulo') + 2, 28), fontWeight: '800' }}>{info.botao}</Text>
+        <Text maxFontSizeMultiplier={1.5} style={{ color: '#fff', fontSize: f('pequeno'), lineHeight: Math.round(f('pequeno') * 1.3) }}>
+          {info.descricao}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
 
 export default function Inicio() {
   const { c } = useTema();
-  const { nome, membro, condominioId, eGestor, ePortaria, sessao } = useSessao();
-  const unidadeId = membro?.unidade_id;
+  const { nome, membro, eGestor } = useSessao();
+  const { dados, recarregar, carregando } = useResumo();
 
-  const { dados, recarregar, carregando } = useConsulta<Resumo>(async () => {
-    const uid = sessao!.user.id;
-    const desde = new Date(Date.now() - 30 * 86400000).toISOString();
-    const [avisos, lidos, enc, cob, res, cham, man] = await Promise.all([
-      supabase.from('avisos').select('id, titulo, importante').eq('condominio_id', condominioId).gte('publicado_em', desde).order('publicado_em', { ascending: false }),
-      supabase.from('avisos_leituras').select('aviso_id').eq('perfil_id', uid),
-      unidadeId
-        ? supabase.from('encomendas').select('id', { count: 'exact', head: true }).eq('unidade_id', unidadeId).is('retirada_em', null)
-        : Promise.resolve({ count: 0 }),
-      unidadeId
-        ? supabase.from('cobrancas').select('valor, vencimento').eq('unidade_id', unidadeId).eq('status', 'aberta').order('vencimento').limit(1)
-        : Promise.resolve({ data: [] as { valor: number; vencimento: string }[] }),
-      eGestor
-        ? supabase.from('reservas').select('id', { count: 'exact', head: true }).eq('condominio_id', condominioId).eq('status', 'pendente')
-        : Promise.resolve({ count: 0 }),
-      eGestor
-        ? supabase.from('chamados').select('id', { count: 'exact', head: true }).eq('condominio_id', condominioId).in('status', ['aberto', 'em_andamento'])
-        : Promise.resolve({ count: 0 }),
-      eGestor
-        ? supabase.from('manutencoes').select('id', { count: 'exact', head: true }).eq('condominio_id', condominioId).lt('proxima', isoData(new Date()))
-        : Promise.resolve({ count: 0 }),
-    ]);
-    const lidosSet = new Set((lidos.data ?? []).map((l) => l.aviso_id));
-    const naoLidos = (avisos.data ?? []).filter((a) => !lidosSet.has(a.id));
-    return {
-      data: {
-        naoLidos: naoLidos.length,
-        importante: naoLidos.find((a) => a.importante) ?? null,
-        encomendas: enc.count ?? 0,
-        cobranca: (cob as { data: { valor: number; vencimento: string }[] | null }).data?.[0] ?? null,
-        paraAprovar: res.count ?? 0,
-        chamadosAbertos: cham.count ?? 0,
-        manutencoesVencidas: man.count ?? 0,
-      },
-      error: avisos.error,
-    };
-  }, [condominioId, unidadeId]);
-
-  const ir = (rota: string) => () => router.push(rota as never);
+  const contadores: Partial<Record<Dimensao, number>> = {
+    financeira: dados?.cobranca ? 1 : 0,
+    comunidade: dados?.naoLidos ?? 0,
+    operacional: (dados?.encomendas ?? 0) + (eGestor ? (dados?.ocorrenciasAbertas ?? 0) + (dados?.paraAprovar ?? 0) + (dados?.manutencoesVencidas ?? 0) : 0),
+  };
+  const avisos = (dados?.avisos ?? []).slice(0, 3);
   const primeiroNome = nome.split(' ')[0];
 
   return (
@@ -77,66 +68,46 @@ export default function Inicio() {
           </Texto>
         </View>
 
-        {/* Recados que pedem atenção, em linguagem direta */}
-        {dados?.importante ? (
-          <Cartao destaque="alerta" aoTocar={ir(`/aviso/${dados.importante.id}`)} rotulo={`Aviso importante: ${dados.importante.titulo}`}>
-            <Texto negrito cor={c.alerta}>AVISO IMPORTANTE</Texto>
-            <Texto tamanho="subtitulo" negrito>{dados.importante.titulo}</Texto>
-            <Texto suave>Toque para ler</Texto>
-          </Cartao>
-        ) : null}
-        {dados?.encomendas ? (
-          <Cartao destaque="primaria" aoTocar={ir('/encomendas')} rotulo="Você tem encomenda na portaria">
-            <Texto tamanho="subtitulo" negrito>📦 Tem encomenda para você</Texto>
-            <Texto>{dados.encomendas === 1 ? '1 pacote aguardando' : `${dados.encomendas} pacotes aguardando`} na portaria.</Texto>
-          </Cartao>
-        ) : null}
-        {dados?.cobranca ? (
-          <Cartao destaque={dados.cobranca.vencimento < isoData(new Date()) ? 'perigo' : undefined} aoTocar={ir('/cobrancas')} rotulo="Ver meu boleto">
-            <Texto negrito>Taxa de condomínio</Texto>
-            <Texto>{moeda(dados.cobranca.valor)} · vence em {dataCurta(dados.cobranca.vencimento)}</Texto>
-          </Cartao>
-        ) : null}
-
-        {eGestor ? (
-          <Botao
-            icone="briefcase-outline"
-            titulo={`Painel da gestão${dados && dados.paraAprovar + dados.chamadosAbertos + dados.manutencoesVencidas > 0 ? ` (${dados.paraAprovar + dados.chamadosAbertos + dados.manutencoesVencidas} pendências)` : ''}`}
-            aoTocar={ir('/gestao')}
-          />
-        ) : null}
-
-        <Subtitulo>{DIMENSOES.operacional.apelido}</Subtitulo>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espaco.s }}>
-          <Ladrilho titulo="Pedir um conserto" icone="hammer-outline" aoTocar={ir('/chamados')} contador={eGestor ? dados?.chamadosAbertos : 0} />
-          <Ladrilho titulo="Reservar espaço" icone="calendar-outline" aoTocar={ir('/reservas')} contador={eGestor ? dados?.paraAprovar : 0} />
-          <Ladrilho titulo="Encomendas" icone="cube-outline" aoTocar={ir('/encomendas')} contador={dados?.encomendas} />
-          <Ladrilho titulo="Manutenções" icone="construct-outline" aoTocar={ir('/manutencoes')} contador={eGestor ? dados?.manutencoesVencidas : 0} />
+        {/* As quatro dimensões do plano de gestão */}
+        <View style={{ gap: espaco.s }}>
+          {ORDEM.map((d) => <BotaoDimensao key={d} d={d} contador={contadores[d]} />)}
         </View>
 
-        <Subtitulo>{DIMENSOES.comunidade.apelido}</Subtitulo>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espaco.s }}>
-          <Ladrilho titulo="Avisos" icone="megaphone-outline" aoTocar={ir('/avisos')} contador={dados?.naoLidos} cor={DIMENSOES.comunidade.cor} />
-          <Ladrilho titulo="Enquetes" icone="checkbox-outline" aoTocar={ir('/enquetes')} cor={DIMENSOES.comunidade.cor} />
-          <Ladrilho titulo="Vizinhos anunciam" icone="pricetags-outline" aoTocar={ir('/classificados')} cor={DIMENSOES.comunidade.cor} />
-          <Ladrilho titulo="Telefones úteis" icone="call-outline" aoTocar={ir('/contatos')} cor={DIMENSOES.comunidade.cor} />
-        </View>
+        {/* Avisos */}
+        <Cartao>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: espaco.s }}>
+            <Ionicons name="megaphone" size={28} color={c.primaria} />
+            <Texto tamanho="subtitulo" negrito style={{ flex: 1 }}>Avisos</Texto>
+            {dados?.naoLidos ? <Selo texto={`${dados.naoLidos} novo${dados.naoLidos > 1 ? 's' : ''}`} tipo="perigo" /> : null}
+          </View>
+          {dados && avisos.length === 0 ? <Texto suave>Nenhum aviso nos últimos 30 dias.</Texto> : null}
+          {avisos.map((a) => (
+            <Pressable
+              key={a.id}
+              onPress={() => router.push(`/aviso/${a.id}`)}
+              accessibilityRole="button"
+              accessibilityLabel={`${a.lido ? '' : 'Não lido. '}${a.importante ? 'Importante. ' : ''}${a.titulo}`}
+              style={({ pressed }) => ({
+                minHeight: 56, paddingVertical: espaco.s, borderTopWidth: 1, borderColor: c.borda,
+                flexDirection: 'row', alignItems: 'center', gap: espaco.s, opacity: pressed ? 0.7 : 1,
+              })}>
+              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: a.lido ? 'transparent' : c.perigo }} />
+              <View style={{ flex: 1 }}>
+                <Texto negrito={!a.lido} cor={a.importante && !a.lido ? c.alerta : undefined}>
+                  {a.importante ? '⚠️ ' : ''}{a.titulo}
+                </Texto>
+                <Texto tamanho="pequeno" suave>{quando(a.publicado_em)}</Texto>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color={c.textoSuave} />
+            </Pressable>
+          ))}
+          <Botao tipo="texto" titulo="Ver todos os avisos" aoTocar={() => router.push('/avisos')} />
+        </Cartao>
 
-        <Subtitulo>{DIMENSOES.financeira.apelido}</Subtitulo>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espaco.s }}>
-          <Ladrilho titulo="Prestação de contas" icone="bar-chart-outline" aoTocar={ir('/financas')} cor={DIMENSOES.financeira.cor} />
-          <Ladrilho titulo="Meus boletos" icone="receipt-outline" aoTocar={ir('/cobrancas')} cor={DIMENSOES.financeira.cor} />
-        </View>
+        {/* Ocorrência: o atalho mais usado, sempre à mão */}
+        <Botao icone="alert-circle-outline" titulo="Registrar ocorrência" dica="Conserto, limpeza, segurança ou barulho" aoTocar={() => router.push('/chamados/novo')} style={{ minHeight: 72 }} />
 
-        <Subtitulo>{DIMENSOES.desenvolvimento.apelido}</Subtitulo>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espaco.s }}>
-          <Ladrilho titulo="Plano de gestão" icone="map-outline" aoTocar={ir('/plano')} cor={DIMENSOES.desenvolvimento.cor} />
-          <Ladrilho titulo="Dar uma ideia" icone="bulb-outline" aoTocar={ir('/sugestoes')} cor={DIMENSOES.desenvolvimento.cor} />
-          <Ladrilho titulo="Documentos" icone="folder-open-outline" aoTocar={ir('/documentos')} cor={DIMENSOES.desenvolvimento.cor} />
-          {ePortaria && !eGestor ? <Ladrilho titulo="Registrar encomenda" icone="add-circle-outline" aoTocar={ir('/encomendas')} /> : null}
-        </View>
-
-        <Botao tipo="perigo" icone="warning-outline" titulo="Emergência: telefones" aoTocar={ir('/contatos')} style={{ marginTop: espaco.l }} />
+        {eGestor ? <Botao tipo="secundario" icone="briefcase-outline" titulo="Painel da gestão" aoTocar={() => router.push('/gestao')} /> : null}
       </Tela>
     </SafeAreaView>
   );

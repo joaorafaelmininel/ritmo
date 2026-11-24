@@ -51,7 +51,7 @@ export default function VerChamado() {
 
   return (
     <Tela>
-      <Stack.Screen options={{ title: 'Pedido' }} />
+      <Stack.Screen options={{ title: 'Ocorrência' }} />
       <Linha>
         <Selo texto={STATUS_CHAMADO[chamado.status]} tipo={corStatus(chamado.status)} />
         <Selo texto={CATEGORIAS_CHAMADO[chamado.categoria] ?? chamado.categoria} />
@@ -91,7 +91,7 @@ export default function VerChamado() {
             </>
           ) : null}
           {meu && chamado.status === 'aberto' ? (
-            <Botao tipo="perigo" titulo="Cancelar este pedido" aoTocar={() => confirmar('Cancelar pedido?', 'A gestão não vai mais tratar este assunto.', async () => {
+            <Botao tipo="perigo" titulo="Cancelar esta ocorrência" aoTocar={() => confirmar('Cancelar ocorrência?', 'A gestão não vai mais tratar este assunto.', async () => {
               await supabase.from('chamados').update({ status: 'cancelado' }).eq('id', id);
               router.back();
             })} />

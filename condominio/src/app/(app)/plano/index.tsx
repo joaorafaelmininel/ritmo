@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -17,7 +17,8 @@ const tipoStatus = (s: Projeto['status']) =>
 // O plano de gestão da síndica, aberto aos moradores, nas quatro dimensões.
 export default function Plano() {
   const { condominioId, eGestor } = useSessao();
-  const [dim, setDim] = useState<Dimensao | 'todas'>('todas');
+  const { dimensao } = useLocalSearchParams<{ dimensao?: Dimensao }>();
+  const [dim, setDim] = useState<Dimensao | 'todas'>(dimensao && dimensao in DIMENSOES ? dimensao : 'todas');
   const { dados, carregando, recarregar } = useConsulta(
     () => supabase.from('projetos').select('*').eq('condominio_id', condominioId).order('ordem').order('criado_em').returns<Projeto[]>(),
     [condominioId],

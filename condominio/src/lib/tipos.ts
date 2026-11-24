@@ -74,11 +74,11 @@ export const NOME_PAPEL: Record<Papel, string> = {
 };
 
 // As quatro dimensões do plano de gestão, com nomes simples para o morador.
-export const DIMENSOES: Record<Dimensao, { nome: string; apelido: string; icone: string; cor: string }> = {
-  financeira: { nome: 'Financeira', apelido: 'Dinheiro do condomínio', icone: 'wallet-outline', cor: '#1B6B38' },
-  operacional: { nome: 'Operacional', apelido: 'Dia a dia e manutenção', icone: 'construct-outline', cor: '#0B4F8A' },
-  comunidade: { nome: 'Comunidade', apelido: 'Convivência', icone: 'people-outline', cor: '#8A3B8F' },
-  desenvolvimento: { nome: 'Desenvolvimento', apelido: 'Melhorias e futuro', icone: 'trending-up-outline', cor: '#7A4300' },
+export const DIMENSOES: Record<Dimensao, { nome: string; botao: string; apelido: string; descricao: string; icone: string; cor: string }> = {
+  financeira: { nome: 'Financeira', botao: 'Finanças', apelido: 'Dinheiro do condomínio', descricao: 'Contas, boletos e prestação de contas', icone: 'wallet-outline', cor: '#1B6B38' },
+  comunidade: { nome: 'Comunidade', botao: 'Comunidade', apelido: 'Convivência', descricao: 'Avisos, enquetes, vizinhos e telefones', icone: 'people-outline', cor: '#8A3B8F' },
+  operacional: { nome: 'Operacional', botao: 'Operacional', apelido: 'Dia a dia e manutenção', descricao: 'Ocorrências, reservas, encomendas', icone: 'construct-outline', cor: '#0B4F8A' },
+  desenvolvimento: { nome: 'Desenvolvimento', botao: 'Desenvolvimento', apelido: 'Melhorias e futuro', descricao: 'Plano de gestão, ideias e documentos', icone: 'trending-up-outline', cor: '#7A4300' },
 };
 
 export const STATUS_PROJETO: Record<Projeto['status'], string> = {

@@ -62,7 +62,7 @@ export default function Gestao() {
 
       <Subtitulo>Pendências</Subtitulo>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espaco.s }}>
-        <Ladrilho titulo="Chamados abertos" icone="hammer-outline" aoTocar={ir('/chamados')} contador={dados.chamados} />
+        <Ladrilho titulo="Ocorrências abertas" icone="hammer-outline" aoTocar={ir('/chamados')} contador={dados.chamados} />
         <Ladrilho titulo="Reservas p/ aprovar" icone="calendar-outline" aoTocar={ir('/reservas')} contador={dados.reservas} />
         <Ladrilho titulo="Manutenções atrasadas" icone="construct-outline" aoTocar={ir('/manutencoes')} contador={dados.manut} />
         <Ladrilho titulo="Pedidos LGPD" icone="shield-outline" aoTocar={ir('/gestao/registros')} contador={dados.pedidos} />

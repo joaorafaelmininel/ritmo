@@ -38,7 +38,7 @@ export default function NovoChamado() {
         fotos: caminhos,
       });
       if (error) throw error;
-      avisar('Pedido enviado!', 'A gestão vai analisar. Você pode acompanhar a resposta aqui no app.');
+      avisar('Ocorrência registrada!', 'A gestão vai analisar. Você pode acompanhar a resposta aqui no app.');
       router.back();
     } catch (e) {
       avisar('Não foi possível enviar', mensagemErro(e));
@@ -46,8 +46,8 @@ export default function NovoChamado() {
   }
 
   return (
-    <Tela rodape={<Botao titulo="Enviar pedido" icone="send-outline" aoTocar={enviar} />}>
-      <Stack.Screen options={{ title: 'Novo pedido' }} />
+    <Tela rodape={<Botao titulo="Enviar ocorrência" icone="send-outline" aoTocar={enviar} />}>
+      <Stack.Screen options={{ title: 'Nova ocorrência' }} />
       <Opcoes rotulo="Qual é o assunto?" valor={categoria} aoMudar={setCategoria} opcoes={Object.entries(CATEGORIAS_CHAMADO).map(([valor, nome]) => ({ valor, nome }))} />
       <Campo rotulo="O que aconteceu?" valor={titulo} aoMudar={setTitulo} placeholder="Ex.: Lâmpada queimada na escada" maxLength={90} />
       <Campo rotulo="Onde?" ajuda="Opcional" valor={local} aoMudar={setLocal} placeholder="Ex.: Bloco B, 2º andar" />

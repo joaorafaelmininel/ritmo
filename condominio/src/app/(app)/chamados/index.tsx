@@ -20,17 +20,17 @@ export default function Chamados() {
 
   return (
     <Tela aoAtualizar={recarregar} atualizando={carregando && !!dados}>
-      <Stack.Screen options={{ title: eGestor ? 'Chamados' : 'Meus pedidos' }} />
-      <Botao icone="add-circle-outline" titulo="Fazer um novo pedido" aoTocar={() => router.push('/chamados/novo')} />
+      <Stack.Screen options={{ title: eGestor ? 'Ocorrências' : 'Minhas ocorrências' }} />
+      <Botao icone="add-circle-outline" titulo="Registrar ocorrência" aoTocar={() => router.push('/chamados/novo')} />
       <Texto suave>
         {eGestor
-          ? 'Todos os pedidos dos moradores. Responda e mude a situação para manter todos informados.'
-          : 'Avise sobre consertos, limpeza, segurança ou convivência. Só você e a gestão veem os seus pedidos.'}
+          ? 'Todas as ocorrências dos moradores. Responda e mude a situação para manter todos informados.'
+          : 'Avise sobre consertos, limpeza, segurança ou convivência. Só você e a gestão veem as suas ocorrências.'}
       </Texto>
       <Opcoes valor={filtro} aoMudar={setFiltro} opcoes={[{ valor: 'abertos', nome: 'Em aberto' }, { valor: 'todos', nome: 'Todos' }]} />
       {erro ? <Erro texto={erro} aoTentar={recarregar} /> : null}
       {!dados && carregando ? <Carregando /> : null}
-      {dados?.length === 0 ? <Vazio icone="checkmark-done-outline" texto="Nenhum pedido aqui." /> : null}
+      {dados?.length === 0 ? <Vazio icone="checkmark-done-outline" texto="Nenhuma ocorrência aqui." /> : null}
       {dados?.map((ch) => (
         <Cartao key={ch.id} aoTocar={() => router.push(`/chamados/${ch.id}`)} rotulo={`${ch.titulo}, ${STATUS_CHAMADO[ch.status]}`}>
           <Linha>
