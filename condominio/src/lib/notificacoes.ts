@@ -47,6 +47,6 @@ export async function desativarNotificacoes() {
 }
 
 /** Pede ao servidor para avisar as pessoas envolvidas (não bloqueia a tela se falhar). */
-export function notificar(tipo: 'aviso' | 'encomenda' | 'reserva' | 'chamado' | 'portaria' | 'pet_perdido' | 'pet_visto' | 'ajuda' | 'ajuda_aceita', id: string) {
+export function notificar(tipo: 'aviso' | 'encomenda' | 'reserva' | 'chamado' | 'portaria' | 'pet_perdido' | 'pet_visto' | 'ajuda' | 'ajuda_aceita' | 'falta', id: string) {
   supabase.functions.invoke('notificar', { body: { tipo, id } }).catch(() => {});
 }

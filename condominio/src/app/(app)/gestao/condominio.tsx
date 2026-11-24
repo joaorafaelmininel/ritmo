@@ -1,7 +1,7 @@
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
 
-import { avisar, Botao, Campo, Tela, Texto } from '@/components/ui';
+import { avisar, Botao, Campo, Opcoes, Tela, Texto } from '@/components/ui';
 import { useSessao } from '@/lib/sessao';
 import { mensagemErro, supabase } from '@/lib/supabase';
 
@@ -12,10 +12,11 @@ export default function DadosCondominio() {
   const [cidade, setCidade] = useState(cd.cidade ?? '');
   const [uf, setUf] = useState(cd.uf ?? '');
   const [contato, setContato] = useState(cd.contato_privacidade ?? '');
+  const [formato, setFormato] = useState(cd.formato_unidade ?? 'bloco_numero');
 
   async function salvar() {
     const { error } = await supabase.from('condominios').update({
-      nome: nome.trim(), cidade: cidade.trim() || null, uf: uf.trim().toUpperCase() || null, contato_privacidade: contato.trim() || null,
+      nome: nome.trim(), cidade: cidade.trim() || null, uf: uf.trim().toUpperCase() || null, contato_privacidade: contato.trim() || null, formato_unidade: formato,
     }).eq('id', cd.id);
     if (error) return avisar('Não foi possível salvar', mensagemErro(error));
     await recarregar();
@@ -28,6 +29,12 @@ export default function DadosCondominio() {
       <Campo rotulo="Nome" valor={nome} aoMudar={setNome} />
       <Campo rotulo="Cidade" valor={cidade} aoMudar={setCidade} />
       <Campo rotulo="Estado (sigla)" valor={uf} aoMudar={(t) => setUf(t.toUpperCase().slice(0, 2))} maxLength={2} />
+      <Opcoes
+        rotulo="Como as unidades são identificadas"
+        valor={formato}
+        aoMudar={setFormato}
+        opcoes={[{ valor: 'bloco_numero', nome: 'Bloco e número' }, { valor: 'quadra_lote', nome: 'Quadra e lote' }, { valor: 'casa', nome: 'Número da casa' }]}
+      />
       <Campo
         rotulo="Contato de privacidade (LGPD)"
         ajuda="E-mail ou telefone para os moradores tratarem de seus dados. O condomínio é o controlador dos dados; a síndica responde por ele."

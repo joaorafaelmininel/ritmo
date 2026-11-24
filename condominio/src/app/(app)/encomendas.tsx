@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { avisar, Botao, Campo, Carregando, Cartao, Subtitulo, Tela, Texto, Vazio } from '@/components/ui';
 import { useConsulta } from '@/lib/consulta';
-import { nomeUnidade, quando } from '@/lib/formato';
+import { codigoUnidade, formatoUnidade, nomeUnidade, quando, unidadeCombina } from '@/lib/formato';
 import { notificar } from '@/lib/notificacoes';
 import { useSessao } from '@/lib/sessao';
 import { mensagemErro, supabase } from '@/lib/supabase';
@@ -52,7 +52,7 @@ export default function Encomendas() {
   if (!dados) return <Carregando />;
   const aguardando = dados.encomendas.filter((e) => !e.retirada_em);
   const retiradas = dados.encomendas.filter((e) => e.retirada_em).slice(0, 15);
-  const filtradas = busca ? dados.unidades.filter((u) => `${u.bloco}${u.numero}`.toLowerCase().includes(busca.toLowerCase().replace(/\W/g, ''))).slice(0, 12) : [];
+  const filtradas = busca ? dados.unidades.filter((u) => unidadeCombina(u, busca)).slice(0, 12) : [];
 
   return (
     <Tela aoAtualizar={recarregar} atualizando={carregando}>
@@ -69,12 +69,12 @@ export default function Encomendas() {
             </>
           ) : (
             <>
-              <Campo rotulo="Número da unidade" valor={busca} aoMudar={setBusca} placeholder="Ex.: 101" keyboardType="default" autoCapitalize="characters" />
+              <Campo rotulo="Número da unidade" valor={busca} aoMudar={setBusca} placeholder={formatoUnidade() === 'quadra_lote' ? 'Ex.: Q8L1' : 'Ex.: 101'} keyboardType="default" autoCapitalize="characters" />
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espaco.s }}>
                 {filtradas.map((u) => (
                   <Pressable key={u.id} onPress={() => setUnidadeSel(u)} accessibilityRole="button"
                     style={{ minHeight: 52, minWidth: 90, paddingHorizontal: espaco.m, borderRadius: 12, borderWidth: 2, borderColor: c.primaria, alignItems: 'center', justifyContent: 'center' }}>
-                    <Texto negrito cor={c.primaria}>{u.bloco ? `${u.bloco}-${u.numero}` : u.numero}</Texto>
+                    <Texto negrito cor={c.primaria}>{codigoUnidade(u)}</Texto>
                   </Pressable>
                 ))}
               </View>

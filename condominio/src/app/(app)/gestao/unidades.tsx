@@ -4,21 +4,24 @@ import { useState } from 'react';
 
 import { avisar, Botao, Campo, Carregando, Cartao, Linha, Selo, Subtitulo, Tela, Texto, useConfirmar } from '@/components/ui';
 import { useConsulta } from '@/lib/consulta';
-import { nomeUnidade } from '@/lib/formato';
+import { codigoUnidade, formatoUnidade, nomeUnidade } from '@/lib/formato';
 import { APP_NOME } from '@/lib/marca';
 import { useSessao } from '@/lib/sessao';
 import { mensagemErro, supabase } from '@/lib/supabase';
 
 type UnidadeCodigo = { id: string; bloco: string; numero: string; codigo_acesso: string; moradores: number };
 
-// Ex.: "101-104, 201-204" ou "A-101, A-102" ou "1-72"
-function expandir(texto: string): string[] {
+// Ex.: "101-104, 201-204", "A: 1-36", "A-101" ou, em quadra/lote: "Q1: 1-8", "Q8L1"
+function expandir(texto: string, quadra: boolean): string[] {
   const itens: string[] = [];
-  for (const parte of texto.split(/[,;\n]+/).map((p) => p.trim()).filter(Boolean)) {
+  for (const bruto of texto.split(/[,;\n]+/).map((p) => p.trim()).filter(Boolean)) {
+    const parte = quadra ? bruto.replace(/^quadra\s*/i, 'Q') : bruto;
+    const ql = parte.match(/^Q\s*(\d+)\s*L\s*(\d+)$/i);
+    if (ql) { itens.push(`${ql[1]}-${ql[2]}`); continue; }
     const faixa = parte.match(/^(?:([A-Za-z0-9]+)\s*[:/]\s*)?(\d+)\s*(?:a|até|-)\s*(\d+)$/i);
     if (faixa && Number(faixa[3]) >= Number(faixa[2]) && Number(faixa[3]) - Number(faixa[2]) <= 500) {
-      const bloco = faixa[1] ? `${faixa[1].toUpperCase()}-` : '';
-      for (let n = Number(faixa[2]); n <= Number(faixa[3]); n++) itens.push(`${bloco}${n}`);
+      const grupo = faixa[1] ? (quadra ? faixa[1].replace(/^Q/i, '') : faixa[1].toUpperCase()) : '';
+      for (let n = Number(faixa[2]); n <= Number(faixa[3]); n++) itens.push(grupo ? `${grupo}-${n}` : String(n));
     } else {
       itens.push(parte.toUpperCase());
     }
@@ -40,7 +43,8 @@ export default function Unidades() {
     [condominioId],
   );
 
-  const previa = expandir(lista);
+  const quadra = formatoUnidade() === 'quadra_lote';
+  const previa = expandir(lista, quadra);
 
   async function criar() {
     const { data, error } = await supabase.rpc('criar_unidades', { p_condominio: condominioId, p_lista: previa });
@@ -56,7 +60,7 @@ export default function Unidades() {
     const cartoes = dados.map((u) => `
       <div class="c">
         <div class="t">${escapar(membro?.condominios.nome ?? '')}</div>
-        <div class="u">${escapar(nomeUnidade(u))}</div>
+        <div class="u">${escapar(nomeUnidade(u))}</div><div>(${escapar(codigoUnidade(u))})</div>
         <div>Seu código de acesso ao app ${APP_NOME}:</div>
         <div class="k">${u.codigo_acesso}</div>
         <div class="p">1. Instale o app ${APP_NOME} (App Store ou Google Play).<br/>2. Entre com seu e-mail.<br/>3. Digite este código. Guarde este papel.</div>
@@ -83,14 +87,16 @@ export default function Unidades() {
 
       <Subtitulo>Cadastrar unidades</Subtitulo>
       <Campo
-        rotulo="Números das unidades"
-        ajuda={'Separe por vírgula. Use faixas: "101-108, 201-208". Com bloco: "A: 1-36, B: 1-36" ou "A-101".'}
+        rotulo={quadra ? 'Quadras e lotes' : 'Números das unidades'}
+        ajuda={quadra
+          ? 'Uma quadra por linha, com a faixa de lotes. Ex.: "Q1: 1-8", "Q2: 1-10". Lote avulso: "Q8L1".'
+          : 'Separe por vírgula. Use faixas: "101-108, 201-208". Com bloco: "A: 1-36, B: 1-36" ou "A-101".'}
         valor={lista}
         aoMudar={setLista}
         multilinha
         autoCapitalize="characters"
       />
-      {previa.length ? <Texto>Serão cadastradas {previa.length}: {previa.slice(0, 12).join(', ')}{previa.length > 12 ? '…' : ''}</Texto> : null}
+      {previa.length ? <Texto>Serão cadastradas {previa.length}: {previa.slice(0, 12).map((x) => (quadra && x.includes('-') ? `Q${x.split('-')[0]}L${x.split('-')[1]}` : x)).join(', ')}{previa.length > 12 ? '…' : ''}</Texto> : null}
       <Botao tipo="secundario" icone="add" titulo="Cadastrar" aoTocar={criar} desativado={!previa.length} />
 
       <Subtitulo>{dados.length} unidades</Subtitulo>

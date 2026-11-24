@@ -9,9 +9,9 @@ Aplicativo (iOS e Android) de gestão e comunicação para condomínios, organiz
 | Dimensão | Para o morador | Para a gestão |
 |---|---|---|
 | **Finanças** (transparência total) | Gráfico dos últimos 12 meses, “para onde vai a sua taxa” (de cada R$ 100), resumo do mês em PDF para o mural, saúde financeira (dinheiro em caixa, resultado do ano, inadimplência, orçamento usado), mês a mês, despesas e receitas por categoria, notas fiscais de cada pagamento, extratos e saldos, orçamento previsto × realizado, balancetes, pareceres do conselho, contratos, seguro e laudos, “Meus boletos” com Pix | Lançar receitas/despesas com nota, registrar saldos e extratos (com proteção LGPD), cadastrar orçamento, publicar documentos por classificação, gerar cobranças |
-| **Dia a dia** (operacional) | Situação dos equipamentos (portões, bomba, interfone…), coleta de lixo com lembrete na véspera, quem está de plantão agora, comunicados de serviço, avisar a portaria sobre visitas/prestadores/entregas, autorizar pelo app quem chegou sem aviso, encomendas, ocorrências com foto, reservas, manutenções | Portaria: painel com esperados do dia, “chegou alguém sem aviso” (pergunta ao morador), registro de encomendas e comunicados. Gestão: escala da equipe, ocorrências, reservas, manutenções |
-| **Comunidade** | Avisos (com “Ouvir em voz alta”), **vizinho solidário** (pedir/oferecer ajuda, com a unidade protegida), **achados e perdidos**, **pets do condomínio** (alerta na tela inicial, histórico de fugas, foto, unidade, “Meu pet fugiu” avisa todos, “Encontrei este pet” avisa o dono), **prestadores indicados** por tipo com recomendações, **negócios de moradores**, enquetes com voto secreto, classificados, telefones úteis | Publicar avisos com notificação, ver quantos leram, criar enquetes, moderar indicações e anúncios |
-| **Desenvolvimento** | **Metas e indicadores** com evolução, **“O que fazer primeiro?”** (cada unidade escolhe 3 prioridades), **antes e depois** com fotos, **relatório de gestão** trimestral em PDF, **calendário do ano** (ações planejadas como poda anual e limpeza de calhas, manutenções preventivas projetadas e prazos de projetos, mês a mês), plano de gestão com andamento, ideias com apoios, documentos | Planejar ações (mês, repetição anual, custo estimado, responsável) e marcar como feitas, cadastrar projetos e processos, responder ideias |
+| **Dia a dia** (operacional) | **“Está faltando luz, água ou internet?”** (um toque mostra se é geral; portaria registra protocolo e previsão), situação dos equipamentos (portões, bomba, interfone…), coleta de lixo com lembrete na véspera, quem está de plantão agora, comunicados de serviço, avisar a portaria sobre visitas/prestadores/entregas, autorizar pelo app quem chegou sem aviso, encomendas, ocorrências com foto, reservas, manutenções | Portaria: painel com esperados do dia, “chegou alguém sem aviso” (pergunta ao morador), registro de encomendas e comunicados. Gestão: escala da equipe, ocorrências, reservas, manutenções |
+| **Comunidade** | **Eventos e encontros** (confirmação por casa com nº de adultos e crianças, tarefas para voluntários, rateio, prato de cada família, divulgar no WhatsApp), **manual do morador**, avisos (com “Ouvir em voz alta”), **vizinho solidário** (pedir/oferecer ajuda, com a unidade protegida), **achados e perdidos**, **pets do condomínio** (alerta na tela inicial, histórico de fugas, foto, unidade, “Meu pet fugiu” avisa todos, “Encontrei este pet” avisa o dono), **prestadores indicados** por tipo com recomendações, **negócios de moradores**, enquetes com voto secreto, classificados, telefones úteis | Publicar avisos com notificação, ver quantos leram, criar enquetes, moderar indicações e anúncios |
+| **Desenvolvimento** | **Assembleias** (pauta com documentos, dúvidas respondidas antes da votação, presença presencial/on-line, ata), **comissões de condôminos**, **metas e indicadores** com evolução, **“O que fazer primeiro?”** (cada unidade escolhe 3 prioridades), **antes e depois** com fotos, **relatório de gestão** trimestral em PDF, **calendário do ano** (ações planejadas como poda anual e limpeza de calhas, manutenções preventivas projetadas e prazos de projetos, mês a mês), plano de gestão com andamento, ideias com apoios, documentos | Planejar ações (mês, repetição anual, custo estimado, responsável) e marcar como feitas, cadastrar projetos e processos, responder ideias |
 
 Painel da gestão: adesão ao app, pendências, inadimplência, andamento do plano, unidades e **cartões impressos com códigos de acesso**, moradores e funções, pedidos LGPD e registro de alterações.
 
@@ -42,7 +42,7 @@ docs/                    LGPD, propriedade intelectual, acessibilidade, escala
 
 1. Crie um projeto em [supabase.com](https://supabase.com) **na região South America (São Paulo)**.
 2. Rode as migrações, em ordem, no *SQL Editor* (ou `npx supabase db push` com o CLI):
-   `20261124000001_estrutura.sql` → `20261124000002_seguranca.sql` → `20261124000003_modelo_inicial.sql` → `20261124000004_transparencia_dia_a_dia.sql` → `20261124000005_convivencia_calendario.sql` → `20261124000006_melhorias.sql`.
+   `20261124000001_estrutura.sql` → `20261124000002_seguranca.sql` → `20261124000003_modelo_inicial.sql` → `20261124000004_transparencia_dia_a_dia.sql` → `20261124000005_convivencia_calendario.sql` → `20261124000006_melhorias.sql` → `20261124000007_vida_no_condominio.sql`.
 3. **E-mail com código** (*Authentication → Email Templates → Magic Link*): troque o conteúdo para mostrar o código, por exemplo:
    ```html
    <h2>Seu código de acesso</h2>
@@ -78,6 +78,10 @@ npx eas-cli@latest submit --platform ios
 npx eas-cli@latest submit --platform android
 ```
 Antes: trocar o identificador `br.com.vizinhar.app` (em `app.json`) pelo definitivo, preencher titular em `src/lib/marca.ts` e `LICENSE`, e preencher os formulários de privacidade das lojas (ver `docs/LGPD.md`).
+
+### Unidades por quadra e lote
+
+Condomínios de chácaras escolhem **“Quadra e lote”** ao cadastrar (ou em Gestão → Dados do condomínio). As unidades aparecem como “Quadra 8 · Lote 1” (Q8L1) e são cadastradas assim: `Q1: 1-8`, `Q2: 1-10`, ou avulsas `Q8L1`.
 
 ### 4. Primeiro uso (síndica)
 

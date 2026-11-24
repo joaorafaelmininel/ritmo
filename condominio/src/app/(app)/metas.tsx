@@ -9,7 +9,7 @@ import { dataLocal, isoData, lerValor, nomeMes } from '@/lib/formato';
 import { useSessao } from '@/lib/sessao';
 import { mensagemErro, supabase } from '@/lib/supabase';
 import { espaco, useTema } from '@/lib/tema';
-import { Dimensao, DIMENSOES, Indicadores, Meta, NOMES_INDICADOR } from '@/lib/tipos';
+import { Dimensao, DIMENSOES, Indicadores, INDICADORES_AUTO, Meta } from '@/lib/tipos';
 
 const fmt = (v: number | null | undefined, u: string) => (v === null || v === undefined ? '—' : `${String(Number(v).toFixed(1)).replace('.0', '').replace('.', ',')}${u === '%' ? '%' : ` ${u}`}`);
 
@@ -32,6 +32,7 @@ export default function Metas() {
   const [unidade, setUnidade] = useState('%');
   const [alvo, setAlvo] = useState('');
   const [sentido, setSentido] = useState<'menor' | 'maior'>('maior');
+  const [indicador, setIndicador] = useState('manual');
   const [medindo, setMedindo] = useState<string | null>(null);
   const [valor, setValor] = useState('');
 
@@ -68,7 +69,10 @@ export default function Metas() {
   async function criar() {
     const v = lerValor(alvo);
     if (titulo.trim().length < 3 || !Number.isFinite(v)) return avisar('Preencha o nome e o valor da meta');
-    const { error } = await supabase.from('metas').insert({ condominio_id: condominioId, titulo: titulo.trim(), dimensao, unidade_medida: unidade, valor_meta: v, sentido });
+    const { error } = await supabase.from('metas').insert({
+      condominio_id: condominioId, titulo: titulo.trim(), dimensao, valor_meta: v, sentido,
+      indicador: indicador === 'manual' ? null : indicador, unidade_medida: indicador === 'manual' ? unidade : INDICADORES_AUTO[indicador].unidade,
+    });
     if (error) return avisar('Não foi possível salvar', mensagemErro(error));
     setNova(false); setTitulo(''); setAlvo('');
     recarregar();
@@ -82,10 +86,10 @@ export default function Metas() {
 
       <Cartao>
         <Texto negrito>Agora</Texto>
-        {Object.entries(NOMES_INDICADOR).map(([k, nome]) => (
-          <Linha key={k} style={{ justifyContent: 'space-between' }}>
-            <Texto style={{ flex: 1 }}>{nome.replace(/ \(.*\)/, '')}</Texto>
-            <Texto negrito>{fmt(dados.ind[k as keyof Indicadores] as number | null, k === 'resposta_ocorrencias' ? 'dias' : '%')}</Texto>
+        {Object.entries(INDICADORES_AUTO).map(([k, info]) => (
+          <Linha key={k} style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+            <Texto style={{ flex: 1 }}>{info.nome.replace(/ \(.*\)/, '')}</Texto>
+            <Texto negrito>{fmt(dados.ind[k as keyof Indicadores] as number | null, info.unidade)}</Texto>
           </Linha>
         ))}
         <Linha style={{ justifyContent: 'space-between' }}><Texto>Ocorrências abertas</Texto><Texto negrito>{dados.ind.ocorrencias_abertas ?? 0}</Texto></Linha>
@@ -152,7 +156,8 @@ export default function Metas() {
         <Cartao>
           <Campo rotulo="Meta" valor={titulo} aoMudar={setTitulo} placeholder="Ex.: Reduzir a conta de água em 10%" />
           <Opcoes rotulo="Dimensão" valor={dimensao} aoMudar={setDimensao} opcoes={(Object.keys(DIMENSOES) as Dimensao[]).map((d) => ({ valor: d, nome: DIMENSOES[d].nome }))} />
-          <Opcoes rotulo="Medida em" valor={unidade} aoMudar={setUnidade} opcoes={['%', 'dias', 'R$', 'unidades', 'm³', 'kWh'].map((u) => ({ valor: u, nome: u }))} />
+          <Opcoes rotulo="Como medir" valor={indicador} aoMudar={setIndicador} opcoes={[{ valor: 'manual', nome: 'A gestão informa todo mês' }, ...Object.entries(INDICADORES_AUTO).map(([v, x]) => ({ valor: v, nome: `Automático: ${x.nome.replace(/ \(.*\)/, '')}` }))]} />
+          {indicador === 'manual' ? <Opcoes rotulo="Medida em" valor={unidade} aoMudar={setUnidade} opcoes={['%', 'dias', 'R$', 'unidades', 'm³', 'kWh'].map((u) => ({ valor: u, nome: u }))} /> : null}
           <Campo rotulo="Valor da meta" valor={alvo} aoMudar={setAlvo} keyboardType="decimal-pad" />
           <Opcoes rotulo="O bom é ficar…" valor={sentido} aoMudar={setSentido} opcoes={[{ valor: 'maior', nome: 'Acima da meta' }, { valor: 'menor', nome: 'Abaixo da meta' }]} />
           <Botao titulo="Salvar meta" aoTocar={criar} />

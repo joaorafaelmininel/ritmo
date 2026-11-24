@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -72,6 +72,7 @@ export default function Contatos() {
           </View>
         );
       })}
+      <Botao tipo="secundario" icone="book-outline" titulo="O que fazer em emergências" aoTocar={() => router.push('/manual?categoria=emergencia')} />
       {eGestor ? (
         novo ? (
           <Cartao>

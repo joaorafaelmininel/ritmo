@@ -13,7 +13,7 @@ import { useResumo } from '@/lib/resumo';
 import { useSessao } from '@/lib/sessao';
 import { supabase } from '@/lib/supabase';
 import { espaco } from '@/lib/tema';
-import { Coleta, Equipamento, Equipe, FUNCOES_EQUIPE, RegistroPortaria, STATUS_EQUIP, TIPOS_COLETA } from '@/lib/tipos';
+import { Coleta, Equipamento, SERVICOS, Equipe, FUNCOES_EQUIPE, RegistroPortaria, STATUS_EQUIP, TIPOS_COLETA } from '@/lib/tipos';
 
 type Comunicado = { id: string; titulo: string; categoria: string; publicado_em: string; valido_ate: string | null };
 const COR = '#0B4F8A';
@@ -26,7 +26,7 @@ export default function DiaADia() {
   const { dados, recarregar } = useConsulta(async () => {
     const agora = new Date().toISOString();
     const tresDias = new Date(Date.now() - 3 * 86400000).toISOString();
-    const [eq, av, pt, eqp, col] = await Promise.all([
+    const [eq, av, pt, eqp, col, inc] = await Promise.all([
       supabase.from('equipe').select('*').eq('condominio_id', condominioId).eq('ativo', true).returns<Equipe[]>(),
       supabase.from('avisos').select('id, titulo, categoria, publicado_em, valido_ate').eq('condominio_id', condominioId)
         .in('categoria', ['operacional', 'manutencao', 'seguranca'])
@@ -37,8 +37,9 @@ export default function DiaADia() {
         : Promise.resolve({ data: [] as RegistroPortaria[] }),
       supabase.from('equipamentos').select('*').eq('condominio_id', condominioId).neq('status', 'ok').returns<Equipamento[]>(),
       supabase.from('coletas').select('*').eq('condominio_id', condominioId).returns<Coleta[]>(),
+      supabase.from('incidentes').select('id, servico, incidentes_relatos(perfil_id)').eq('condominio_id', condominioId).eq('status', 'aberto'),
     ]);
-    return { data: { equipe: eq.data ?? [], comunicados: av.data ?? [], pendentes: pt.data ?? [], problemas: eqp.data ?? [], coletas: col.data ?? [] }, error: eq.error };
+    return { data: { equipe: eq.data ?? [], comunicados: av.data ?? [], pendentes: pt.data ?? [], problemas: eqp.data ?? [], coletas: col.data ?? [], faltas: (inc.data ?? []) as { id: string; servico: string; incidentes_relatos: { perfil_id: string }[] }[] }, error: eq.error };
   }, [condominioId]);
 
   const agora = (dados?.equipe ?? []).filter((e) => emServico(e));
@@ -48,6 +49,15 @@ export default function DiaADia() {
       <Stack.Screen options={{ title: 'Dia a dia' }} />
 
       {dados?.pendentes.map((r) => <RespostaPortaria key={r.id} r={r} aoResponder={recarregar} />)}
+
+      {/* Falta de luz, água, internet… */}
+      <Cartao destaque={dados?.faltas.length ? 'alerta' : 'primaria'} aoTocar={() => router.push('/servicos')} rotulo="Está faltando luz, água ou internet?">
+        <Texto tamanho="subtitulo" negrito>{dados?.faltas.length ? '⚠️ Falta relatada agora' : 'Está faltando luz, água ou internet?'}</Texto>
+        {dados?.faltas.map((f) => (
+          <Texto key={f.id}>{SERVICOS[f.servico]?.emoji} {SERVICOS[f.servico]?.nome}: {f.incidentes_relatos.length} casa{f.incidentes_relatos.length === 1 ? '' : 's'} relataram</Texto>
+        ))}
+        <Texto suave>{dados?.faltas.length ? 'Toque para ver protocolo e previsão, ou avisar que aí também.' : 'Toque para avisar e ver se é só na sua casa.'}</Texto>
+      </Cartao>
 
       {/* Quem está trabalhando agora */}
       <Cartao>

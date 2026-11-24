@@ -31,6 +31,8 @@ export default function DimensaoTela() {
     ],
     comunidade: [
       { titulo: 'Avisos', detalhe: 'Recados da gestão', icone: 'megaphone-outline', rota: '/avisos', contador: dados?.naoLidos },
+      { titulo: 'Eventos e encontros', detalhe: dados?.proximoEvento ? `Próximo: ${dados.proximoEvento.titulo}` : 'Festas, encontros e reuniões — confirme presença', icone: 'balloon-outline', rota: '/eventos' },
+      { titulo: 'Manual do morador', detalhe: 'Regras, serviços e o que fazer em emergências', icone: 'book-outline', rota: '/manual' },
       { titulo: 'Pets do condomínio', detalhe: dados?.petsPerdidos ? 'Tem pet perdido! Ajude a encontrar' : 'Ache o dono do bichinho que apareceu aí', icone: 'paw-outline', rota: '/pets', contador: dados?.petsPerdidos, destaque: !!dados?.petsPerdidos },
       { titulo: 'Vizinho solidário', detalhe: 'Peça ou ofereça ajuda: farmácia, mercado, celular', icone: 'heart-outline', rota: '/solidario' },
       { titulo: 'Achados e perdidos', detalhe: 'Objetos encontrados nas áreas comuns', icone: 'search-outline', rota: '/achados' },
@@ -50,7 +52,9 @@ export default function DimensaoTela() {
       plano,
     ],
     desenvolvimento: [
-      { titulo: 'Calendário do ano', detalhe: 'Podas, manutenções e ações planejadas, mês a mês', icone: 'calendar-outline', rota: '/calendario', destaque: true },
+      { titulo: 'Calendário do ano', detalhe: 'Podas, manutenções e ações planejadas, mês a mês', icone: 'calendar-outline', rota: '/calendario', destaque: !dados?.assembleiaProxima },
+      { titulo: 'Assembleias', detalhe: 'Pauta, documentos, dúvidas e atas', icone: 'people-circle-outline', rota: '/assembleias', destaque: !!dados?.assembleiaProxima },
+      { titulo: 'Comissões de condôminos', detalhe: 'Obras, segurança, eventos e finanças — participe', icone: 'people-outline', rota: '/comissoes' },
       { titulo: 'Metas e indicadores', detalhe: 'Os compromissos da gestão em números', icone: 'speedometer-outline', rota: '/metas' },
       { titulo: 'O que fazer primeiro?', detalhe: 'Escolha até 3 projetos prioritários', icone: 'star-outline', rota: '/prioridades' },
       { titulo: 'Plano de gestão', detalhe: 'Projetos e processos nas quatro áreas', icone: 'map-outline', rota: '/plano' },

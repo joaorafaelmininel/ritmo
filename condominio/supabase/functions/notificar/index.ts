@@ -12,7 +12,7 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-type Pedido = { tipo: 'aviso' | 'encomenda' | 'reserva' | 'chamado' | 'portaria' | 'pet_perdido' | 'pet_visto' | 'ajuda' | 'ajuda_aceita'; id: string };
+type Pedido = { tipo: 'aviso' | 'encomenda' | 'reserva' | 'chamado' | 'portaria' | 'pet_perdido' | 'pet_visto' | 'ajuda' | 'ajuda_aceita' | 'falta'; id: string };
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -130,6 +130,18 @@ Deno.serve(async (req) => {
       corpo = 'Toque para ver quem é.';
     }
     rota = '/solidario';
+  } else if (tipo === 'falta') {
+    // Primeiro relato de falta de serviço → avisa portaria e gestão
+    const { data: inc } = await usuario.from('incidentes').select('condominio_id, servico').eq('id', id).single();
+    if (!inc) return json({ erro: 'Não encontrado.' }, 404);
+    condominio = inc.condominio_id;
+    const { data } = await admin.from('membros').select('perfil_id').eq('condominio_id', condominio).eq('ativo', true)
+      .in('papel', ['portaria', 'sindico', 'subsindico', 'administracao']);
+    destinatarios = (data ?? []).map((m) => m.perfil_id);
+    const nomes: Record<string, string> = { energia: 'energia', agua: 'água', internet: 'internet', interfone: 'interfone', portao: 'portão' };
+    titulo = `Morador relatou falta de ${nomes[inc.servico] ?? inc.servico}`;
+    corpo = 'Toque para registrar protocolo e previsão.';
+    rota = '/servicos';
   } else {
     return json({ erro: 'Tipo inválido.' }, 400);
   }

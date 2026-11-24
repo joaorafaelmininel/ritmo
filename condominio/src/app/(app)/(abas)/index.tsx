@@ -1,12 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AlertaPet } from '@/components/alertaPet';
 import { RespostaPortaria } from '@/components/respostaPortaria';
 import { Botao, Cartao, Selo, Tela, Texto } from '@/components/ui';
-import { quando, nomeUnidade, saudacao } from '@/lib/formato';
+import { dataPorExtenso, horaDe, quando, nomeUnidade, saudacao } from '@/lib/formato';
 import { useResumo } from '@/lib/resumo';
 import { useSessao } from '@/lib/sessao';
 import { espaco, useTema } from '@/lib/tema';
@@ -53,6 +54,7 @@ export default function Inicio() {
   const { c } = useTema();
   const { nome, membro, eGestor } = useSessao();
   const { dados, recarregar, carregando } = useResumo();
+  const [agora] = useState(() => Date.now());
 
   const contadores: Partial<Record<Dimensao, number>> = {
     financeira: dados?.cobranca ? 1 : 0,
@@ -76,6 +78,23 @@ export default function Inicio() {
         {/* Urgente: alguém na portaria esperando autorização */}
         {dados?.portaria.map((r) => <RespostaPortaria key={r.id} r={r} aoResponder={recarregar} />)}
         {dados?.petsPerdidosLista.map((p) => <AlertaPet key={p.id} pet={p} meu={p.unidade_id === membro?.unidade_id} />)}
+
+        {/* Recém-chegados: manual do morador */}
+        {membro?.criado_em && agora - new Date(membro.criado_em).getTime() < 30 * 86400000 ? (
+          <Cartao destaque="primaria" aoTocar={() => router.push('/manual')} rotulo="Manual do morador">
+            <Texto tamanho="subtitulo" negrito>👋 Novo por aqui?</Texto>
+            <Texto>Leia o manual do morador: regras, serviços que atendem o condomínio e o que fazer em emergências.</Texto>
+          </Cartao>
+        ) : null}
+
+        {/* Próximo evento em até 15 dias */}
+        {dados?.proximoEvento ? (
+          <Cartao destaque={dados.proximoEvento.confirmado ? 'sucesso' : undefined} aoTocar={() => router.push(`/eventos/${dados.proximoEvento!.id}`)} rotulo={dados.proximoEvento.titulo}>
+            <Texto negrito>🎉 {dados.proximoEvento.titulo}</Texto>
+            <Texto>{dataPorExtenso(dados.proximoEvento.inicio)} · {horaDe(dados.proximoEvento.inicio)}</Texto>
+            <Texto tamanho="pequeno" suave>{dados.proximoEvento.confirmado ? '✓ Sua casa confirmou' : 'Toque para confirmar presença'}</Texto>
+          </Cartao>
+        ) : null}
 
         {/* As quatro dimensões do plano de gestão */}
         <View style={{ gap: espaco.s }}>

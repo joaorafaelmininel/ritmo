@@ -17,6 +17,8 @@ export type Resumo = {
   portaria: RegistroPortaria[];
   petsPerdidos: number;
   petsPerdidosLista: Pet[];
+  proximoEvento: { id: string; titulo: string; inicio: string; confirmado: boolean } | null;
+  assembleiaProxima: { id: string; titulo: string; data: string } | null;
 };
 
 /** Números que aparecem como "bolinhas" nos botões (novidades e pendências). */
@@ -28,7 +30,7 @@ export function useResumo() {
     const uid = sessao!.user.id;
     const desde = new Date(Date.now() - 30 * 86400000).toISOString();
     const contar = (q: PromiseLike<{ count: number | null }>) => q.then((r) => r.count ?? 0);
-    const [avisos, lidos, encomendas, cob, paraAprovar, ocorrencias, manutencoes, portaria, pets] = await Promise.all([
+    const [avisos, lidos, encomendas, cob, paraAprovar, ocorrencias, manutencoes, portaria, pets, ev, asm] = await Promise.all([
       supabase.from('avisos').select('id, titulo, importante, publicado_em').eq('condominio_id', condominioId)
         .gte('publicado_em', desde).order('importante', { ascending: false }).order('publicado_em', { ascending: false }).limit(20),
       supabase.from('avisos_leituras').select('aviso_id').eq('perfil_id', uid),
@@ -43,7 +45,12 @@ export function useResumo() {
         ? supabase.from('portaria').select('*').eq('unidade_id', unidadeId).eq('status', 'na_portaria').returns<RegistroPortaria[]>()
         : Promise.resolve({ data: [] as RegistroPortaria[] }),
       supabase.from('pets').select('*, unidades(bloco, numero)').eq('condominio_id', condominioId).eq('perdido', true).eq('ativo', true).returns<Pet[]>(),
+      supabase.from('eventos').select('id, titulo, inicio, eventos_presencas(unidade_id)').eq('condominio_id', condominioId).eq('cancelado', false)
+        .gte('inicio', new Date().toISOString()).lte('inicio', new Date(Date.now() + 15 * 86400000).toISOString()).order('inicio').limit(1),
+      supabase.from('assembleias').select('id, titulo, data').eq('condominio_id', condominioId).eq('status', 'convocada')
+        .gte('data', new Date().toISOString()).order('data').limit(1),
     ]);
+    const e0 = (ev.data ?? [])[0] as { id: string; titulo: string; inicio: string; eventos_presencas: { unidade_id: string }[] } | undefined;
     const lidosSet = new Set((lidos.data ?? []).map((l) => l.aviso_id));
     const lista = (avisos.data ?? []).map((a) => ({ ...a, lido: lidosSet.has(a.id) }));
     return {
@@ -58,6 +65,8 @@ export function useResumo() {
         portaria: portaria.data ?? [],
         petsPerdidos: (pets.data ?? []).length,
         petsPerdidosLista: pets.data ?? [],
+        proximoEvento: e0 ? { id: e0.id, titulo: e0.titulo, inicio: e0.inicio, confirmado: e0.eventos_presencas.some((p) => p.unidade_id === unidadeId) } : null,
+        assembleiaProxima: (asm.data ?? [])[0] ?? null,
       },
       error: avisos.error,
     };

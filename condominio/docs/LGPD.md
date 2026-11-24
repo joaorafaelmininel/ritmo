@@ -33,6 +33,11 @@
 | Pedidos de ajuda (vizinho solidário) | Rede de apoio entre moradores | Consentimento (pedido voluntário) | Todos veem o pedido; **a unidade só aparece para o voluntário que aceitou** e para a gestão | 6 meses após concluído |
 | Voluntários (habilidades, disponibilidade) | Rede de apoio | Consentimento | Moradores | Até sair da lista |
 | Achados e perdidos (descrição, foto) | Devolver objetos | Legítimo interesse | Moradores | 6 meses após resolvido |
+| Presença em eventos | Organizar festas e encontros | Consentimento (confirmação voluntária) | Moradores (nome de quem confirmou) | Histórico do evento |
+| Crianças em eventos | Planejar brinquedos e lanches | — | **Só a quantidade**; o app não pede nomes nem idades de crianças (LGPD art. 14) | — |
+| Relatos de falta de serviço | Saber se a falta é geral e cobrar a concessionária | Legítimo interesse | Moradores veem a contagem; a gestão vê o histórico | 1 ano |
+| Perguntas sobre a pauta de assembleia | Esclarecer antes da votação | Legítimo interesse | Moradores | Histórico da assembleia |
+| Participação em comissões | Organização voluntária | Consentimento | Moradores | Até sair da comissão |
 | Equipe (primeiro nome, função, horário) | Saber quem está em serviço | Legítimo interesse / execução de contrato de trabalho | Moradores | Enquanto estiver na escala |
 | Extratos bancários | Transparência das contas | Obrigação legal (prestação de contas) | Todos **só se** a gestão confirmar que ocultou dados de moradores; senão, gestão e conselho | 5 anos |
 

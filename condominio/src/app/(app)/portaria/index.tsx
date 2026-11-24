@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { RespostaPortaria } from '@/components/respostaPortaria';
 import { avisar, Botao, Campo, Carregando, Cartao, Linha, Opcoes, Selo, Subtitulo, Tela, Texto, useConfirmar, Vazio } from '@/components/ui';
 import { useConsulta } from '@/lib/consulta';
-import { dataPorExtenso, isoData, nomeUnidade, quando } from '@/lib/formato';
+import { codigoUnidade, formatoUnidade, dataPorExtenso, isoData, nomeUnidade, quando, unidadeCombina } from '@/lib/formato';
 import { notificar } from '@/lib/notificacoes';
 import { responderPortaria } from '@/lib/portaria';
 import { useSessao } from '@/lib/sessao';
@@ -94,7 +94,7 @@ function PainelPortaria() {
   const esperados = dados.registros.filter((r) => r.status === 'esperado' || r.status === 'autorizado');
   const aguardando = dados.registros.filter((r) => r.status === 'na_portaria');
   const finalizados = dados.registros.filter((r) => ['entrou', 'negado', 'cancelado'].includes(r.status));
-  const filtradas = busca ? dados.unidades.filter((u) => `${u.bloco}${u.numero}`.toLowerCase().includes(busca.toLowerCase().replace(/\W/g, ''))).slice(0, 12) : [];
+  const filtradas = busca ? dados.unidades.filter((u) => unidadeCombina(u, busca)).slice(0, 12) : [];
 
   return (
     <Tela aoAtualizar={recarregar}>
@@ -112,12 +112,12 @@ function PainelPortaria() {
           </>
         ) : (
           <>
-            <Campo rotulo="Número da unidade" valor={busca} aoMudar={setBusca} autoCapitalize="characters" placeholder="Ex.: 101" />
+            <Campo rotulo="Número da unidade" valor={busca} aoMudar={setBusca} autoCapitalize="characters" placeholder={formatoUnidade() === 'quadra_lote' ? 'Ex.: Q8L1' : 'Ex.: 101'} />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espaco.s }}>
               {filtradas.map((u) => (
                 <Pressable key={u.id} onPress={() => setUnidade(u)} accessibilityRole="button"
                   style={{ minHeight: 52, minWidth: 90, paddingHorizontal: espaco.m, borderRadius: 12, borderWidth: 2, borderColor: c.primaria, alignItems: 'center', justifyContent: 'center' }}>
-                  <Texto negrito cor={c.primaria}>{u.bloco ? `${u.bloco}-${u.numero}` : u.numero}</Texto>
+                  <Texto negrito cor={c.primaria}>{codigoUnidade(u)}</Texto>
                 </Pressable>
               ))}
             </View>

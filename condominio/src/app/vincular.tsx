@@ -17,6 +17,7 @@ export default function Vincular() {
   const [cidade, setCidade] = useState('');
   const [uf, setUf] = useState('');
   const [contato, setContato] = useState('');
+  const [formato, setFormato] = useState('quadra_lote');
 
   async function entrar() {
     if (codigo.replace(/\W/g, '').length < 6) return avisar('Código incompleto', 'Digite o código que está no papel entregue pela síndica.');
@@ -29,7 +30,7 @@ export default function Vincular() {
   async function criar() {
     if (nome.trim().length < 3) return avisar('Falta o nome', 'Digite o nome do condomínio.');
     const { data, error } = await supabase.rpc('criar_condominio', {
-      p_nome: nome, p_cidade: cidade, p_uf: uf, p_contato_privacidade: contato || null,
+      p_nome: nome, p_cidade: cidade, p_uf: uf, p_contato_privacidade: contato || null, p_formato: formato,
     });
     if (error) return avisar('Não foi possível criar', mensagemErro(error));
     escolherCondominio(data as string);
@@ -77,6 +78,12 @@ export default function Vincular() {
             <Campo rotulo="Nome do condomínio" valor={nome} aoMudar={setNome} autoCapitalize="words" />
             <Campo rotulo="Cidade" valor={cidade} aoMudar={setCidade} autoCapitalize="words" placeholder="Jardinópolis" />
             <Campo rotulo="Estado (sigla)" valor={uf} aoMudar={(t) => setUf(t.toUpperCase().slice(0, 2))} autoCapitalize="characters" placeholder="SP" maxLength={2} />
+            <Opcoes
+              rotulo="Como as unidades são identificadas?"
+              valor={formato}
+              aoMudar={setFormato}
+              opcoes={[{ valor: 'quadra_lote', nome: 'Quadra e lote' }, { valor: 'bloco_numero', nome: 'Bloco e número' }, { valor: 'casa', nome: 'Número da casa' }]}
+            />
             <Campo
               rotulo="Contato para assuntos de privacidade"
               ajuda="E-mail ou telefone que os moradores podem usar para pedidos sobre seus dados (LGPD)."

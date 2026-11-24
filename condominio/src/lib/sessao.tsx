@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { VERSAO_PRIVACIDADE, VERSAO_TERMOS } from '@/legal/textos';
+import { definirFormatoUnidade } from './formato';
 import { supabase } from './supabase';
 import type { Membro, Papel } from './tipos';
 
@@ -45,7 +46,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
       supabase.from('perfis').select('nome').eq('id', uid).maybeSingle(),
       supabase.from('consentimentos').select('documento, versao').eq('perfil_id', uid).eq('aceito', true),
       supabase.from('membros')
-        .select('id, condominio_id, unidade_id, papel, vinculo, telefone, condominios(id, nome, cidade, uf, contato_privacidade), unidades(id, bloco, numero)')
+        .select('id, condominio_id, unidade_id, papel, vinculo, telefone, criado_em, condominios(id, nome, cidade, uf, contato_privacidade, formato_unidade), unidades(id, bloco, numero)')
         .eq('perfil_id', uid).eq('ativo', true),
       AsyncStorage.getItem(CHAVE_CONDO),
     ]);
@@ -74,6 +75,8 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
   }, [carregarDados]);
 
   const membro = vinculos.find((v) => v.condominio_id === ativo) ?? null;
+  // Nomes das unidades seguem o formato do condomínio ativo (ex.: Quadra 8 · Lote 1)
+  definirFormatoUnidade(membro?.condominios.formato_unidade);
   const papel = membro?.papel ?? null;
 
   const valor = useMemo<Estado>(() => ({

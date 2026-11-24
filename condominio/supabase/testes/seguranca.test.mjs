@@ -185,6 +185,35 @@ log('C não vê votos de B', await as(C, `select count(*) from projetos_priorida
 log('Ranking agregado', await as(C, `select sum(votos) s from ranking_prioridades($1)`, [c]), (v) => Number(v[0].s) === 3);
 log('Projeto concluído ganha data', await as(A, `update projetos set status='concluido' where id=$1 returning concluido_em is not null d, progresso`, [projs[0].id]), (v) => v[0].d && v[0].progresso === 100);
 log('Resumo do período (morador)', await as(B, `select resumo_periodo($1, current_date - 90, current_date) r`, [c]), (v) => v[0].r.ocorrencias_registradas >= 1);
+// --- Eventos ---
+const [ev] = await as(B, `insert into eventos (condominio_id,titulo,inicio,tipo) values ($1,'Festa junina', now() + interval '10 days','festa') returning id`, [c]);
+log('B organiza evento', ev ? [ev] : ev, (v) => !!v[0]?.id);
+log('C confirma presença', await as(C, `insert into eventos_presencas (evento_id, unidade_id, adultos, criancas, rateio) values ($1,$2,2,3,true) returning criancas`, [ev.id, uc]));
+log('C confirma por B (falha)', await as(C, `insert into eventos_presencas (evento_id, unidade_id) values ($1,$2)`, [ev.id, ub]));
+const [tf] = await as(B, `insert into eventos_tarefas (evento_id, descricao) values ($1,'Bandeirinhas') returning id`, [ev.id]);
+log('C cria tarefa em evento alheio (falha)', await as(C, `insert into eventos_tarefas (evento_id, descricao) values ($1,'X')`, [ev.id]));
+log('C assume tarefa', await as(C, `update eventos_tarefas set responsavel_id=auth.uid() where id=$1 returning responsavel_id`, [tf.id]), (v) => v[0]?.responsavel_id === C);
+log('A toma tarefa de C? (gestão pode)', await as(A, `update eventos_tarefas set responsavel_id=null where id=$1 returning id`, [tf.id]), (v) => v.length === 1);
+// --- Falta de serviços ---
+log('B relata falta de luz', await as(B, `select * from relatar_falta($1,'energia','meia fase')`, [c]), (v) => v[0].novo === true);
+log('C relata a mesma falta', await as(C, `select * from relatar_falta($1,'energia','sem luz')`, [c]), (v) => v[0].novo === false && Number(v[0].relatos) === 2);
+log('B atualiza incidente (ignorado)', await as(B, `update incidentes set status='resolvido' returning id`), (v) => v.length === 0);
+log('Portaria registra protocolo', await as(C, `update incidentes set protocolo='CPFL 123', origem='concessionaria', status='resolvido' returning fim is not null f`), (v) => v[0]?.f);
+// --- Manual, comissões, assembleia ---
+await as(A, `select aplicar_manual_padrao($1)`, [c]);
+log('A manual padrão', await as(B, `select count(*) from manual_secoes`), (v) => n(v) >= 8);
+const [com] = await as(A, `insert into comissoes (condominio_id, nome) values ($1,'Obras') returning id`, [c]);
+log('B entra na comissão', await as(B, `insert into comissoes_membros (comissao_id) values ($1) returning 1`, [com.id]));
+log('B vira coordenador (falha)', await as(B, `insert into comissoes_membros (comissao_id, perfil_id, coordenador) values ($1, $2, true)`, [com.id, C]));
+const [asm] = await as(A, `insert into assembleias (condominio_id, titulo, data) values ($1,'AGO 2026', now() + interval '20 days') returning id`, [c]);
+const [it] = await as(A, `insert into assembleia_pauta (assembleia_id, ordem, titulo) values ($1,1,'Previsão orçamentária 2027') returning id`, [asm.id]);
+log('B pergunta sobre item', await as(B, `insert into assembleia_perguntas (pauta_id, texto) values ($1,'Podem enviar a planilha?') returning id`, [it.id]));
+log('B responde a própria pergunta (ignorado)', await as(B, `update assembleia_perguntas set resposta='x' returning id`), (v) => v.length === 0);
+log('A responde', await as(A, `update assembleia_perguntas set resposta='Planilha anexada ao item' returning respondido_em is not null r`), (v) => v[0].r);
+log('B confirma presença na assembleia', await as(B, `insert into assembleia_presencas (assembleia_id, unidade_id, modo) values ($1,$2,'online') returning modo`, [asm.id, ub]));
+// --- Primeira resposta e indicadores ---
+log('Primeira resposta registrada', await as(A, `select primeira_resposta_em is not null r from chamados where id=$1`, [ch.id]), (v) => v[0].r);
+log('Indicadores ampliados', await as(B, `select indicadores($1) i`, [c]), (v) => v[0].i.primeira_resposta_min !== undefined && v[0].i.comissoes_ativas === 1 && v[0].i.participacao_assembleia > 0);
 log('anon vê avisos', await as('', `select count(*) from avisos`), (v) => n(v) === 0);
 console.log(falhas ? `\n${falhas} verificação(ões) falharam` : '\nTodas as verificações passaram');
 process.exit(falhas ? 1 : 0);

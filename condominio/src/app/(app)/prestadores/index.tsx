@@ -17,6 +17,7 @@ export default function Prestadores() {
   const [tipo, setTipo] = useState('todos');
   const [comentando, setComentando] = useState<string | null>(null);
   const [comentario, setComentario] = useState('');
+  const [novidade, setNovidade] = useState<Record<string, string>>({});
   const morador = origem === 'morador';
 
   const { dados, recarregar } = useConsulta(
@@ -38,6 +39,8 @@ export default function Prestadores() {
   }
 
   if (!dados) return <Carregando />;
+  const hoje = new Date().toDateString();
+  const deHoje = dados.filter((p) => p.novidade && p.novidade_em && new Date(p.novidade_em).toDateString() === hoje);
   const tipos = [...new Set(dados.map((p) => p.tipo))].sort();
   const lista = dados
     .filter((p) => tipo === 'todos' || p.tipo === tipo)
@@ -52,6 +55,12 @@ export default function Prestadores() {
           : 'Profissionais que os vizinhos já contrataram e recomendam. Os mais recomendados aparecem primeiro.'}
       </Texto>
       <Botao icone="add-circle-outline" titulo={morador ? 'Divulgar meu negócio' : 'Indicar um prestador'} aoTocar={() => router.push(`/prestadores/novo?origem=${origem}`)} />
+      {morador && deHoje.length ? (
+        <Cartao destaque="primaria">
+          <Texto tamanho="subtitulo" negrito>☀️ Hoje nos negócios dos vizinhos</Texto>
+          {deHoje.map((p) => <Texto key={p.id}>• <Texto negrito>{p.nome}:</Texto> {p.novidade}</Texto>)}
+        </Cartao>
+      ) : null}
       {tipos.length > 1 ? <Opcoes valor={tipo} aoMudar={setTipo} opcoes={[{ valor: 'todos', nome: 'Todos' }, ...tipos.map((t) => ({ valor: t, nome: t }))]} /> : null}
       {lista.length === 0 ? <Vazio icone="people-outline" texto={morador ? 'Nenhum negócio divulgado ainda.' : 'Nenhuma indicação ainda. Seja o primeiro!'} /> : null}
 
@@ -91,6 +100,17 @@ export default function Prestadores() {
               ) : (
                 <Botao tipo="secundario" icone="thumbs-up-outline" titulo="Já contratei e recomendo" aoTocar={() => { setComentando(p.id); setComentario(''); }} />
               )
+            ) : null}
+            {meu && morador ? (
+              <>
+                <Campo rotulo="Hoje tem…" ajuda="Cardápio do dia, promoção, novidade. Aparece no topo para os vizinhos (só hoje)." valor={novidade[p.id] ?? ''} aoMudar={(t) => setNovidade((x) => ({ ...x, [p.id]: t }))} multilinha />
+                <Botao tipo="secundario" icone="megaphone-outline" titulo="Divulgar hoje" desativado={!(novidade[p.id] ?? '').trim()} aoTocar={async () => {
+                  const { error } = await supabase.from('prestadores').update({ novidade: novidade[p.id].trim(), novidade_em: new Date().toISOString() }).eq('id', p.id);
+                  if (error) return avisar('Não foi possível', mensagemErro(error));
+                  setNovidade((x) => ({ ...x, [p.id]: '' }));
+                  recarregar();
+                }} />
+              </>
             ) : null}
             {meu || eGestor ? (
               <Botao tipo="texto" titulo="Remover" aoTocar={() => confirmar('Remover?', p.nome, async () => {

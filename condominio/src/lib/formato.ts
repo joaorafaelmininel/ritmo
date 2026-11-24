@@ -50,9 +50,35 @@ export function saudacao() {
   return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
 }
 
+export type FormatoUnidade = 'bloco_numero' | 'quadra_lote' | 'casa';
+let FORMATO: FormatoUnidade = 'bloco_numero';
+/** Definido pela sessão conforme o condomínio ativo. */
+export function definirFormatoUnidade(f?: string | null) {
+  FORMATO = f === 'quadra_lote' || f === 'casa' ? f : 'bloco_numero';
+}
+export const formatoUnidade = () => FORMATO;
+
+/** "Quadra 8 · Lote 1", "Bloco A · 101", "Casa 12" */
 export function nomeUnidade(u?: { bloco?: string | null; numero?: string | null } | null) {
   if (!u?.numero) return '';
+  if (FORMATO === 'quadra_lote') return u.bloco ? `Quadra ${u.bloco} · Lote ${u.numero}` : `Lote ${u.numero}`;
+  if (FORMATO === 'casa') return `Casa ${u.bloco ? `${u.bloco}-` : ''}${u.numero}`;
   return u.bloco ? `Bloco ${u.bloco} · ${u.numero}` : `Unidade ${u.numero}`;
+}
+
+/** Forma curta usada nos botões e buscas: "Q8L1", "A-101", "101" */
+export function codigoUnidade(u?: { bloco?: string | null; numero?: string | null } | null) {
+  if (!u?.numero) return '';
+  if (FORMATO === 'quadra_lote') return u.bloco ? `Q${u.bloco}L${u.numero}` : `L${u.numero}`;
+  return u.bloco ? `${u.bloco}-${u.numero}` : u.numero;
+}
+
+/** A unidade combina com o que foi digitado na busca? Aceita "Q8L1", "8 1", "q8 l1", "101". */
+export function unidadeCombina(u: { bloco?: string | null; numero?: string | null }, busca: string) {
+  const b = busca.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!b) return false;
+  const opcoes = [codigoUnidade(u), `${u.bloco ?? ''}${u.numero ?? ''}`, nomeUnidade(u)].map((x) => x.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  return opcoes.some((o) => o.includes(b));
 }
 
 /** "1.234,56" → 1234.56 */
@@ -69,3 +95,6 @@ export function lerData(t: string) {
   if (d.getMonth() !== Number(m[2]) - 1) return null;
   return isoData(d);
 }
+
+/** "19:30" */
+export const horaDe = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });

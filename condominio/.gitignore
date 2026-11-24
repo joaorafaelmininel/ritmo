@@ -46,3 +46,6 @@ example
 .env
 .env*.local
 registro-inpi/
+
+# Dados particulares de um condomínio (não versionar: o repositório é público)
+privado/

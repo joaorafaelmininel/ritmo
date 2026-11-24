@@ -10,8 +10,9 @@ export type Membro = {
   papel: Papel;
   vinculo: string | null;
   telefone: string | null;
-  condominios: { id: string; nome: string; cidade: string | null; uf: string | null; contato_privacidade: string | null };
+  condominios: { id: string; nome: string; cidade: string | null; uf: string | null; contato_privacidade: string | null; formato_unidade: string };
   unidades: Unidade | null;
+  criado_em?: string;
 };
 
 export type Aviso = {
@@ -156,7 +157,7 @@ export const ESPECIES: Record<Pet['especie'], { nome: string; emoji: string }> =
 
 export type Prestador = {
   id: string; origem: 'indicado' | 'morador'; tipo: string; nome: string; telefone: string | null; descricao: string | null;
-  autor_id: string | null; criado_em: string; perfis?: { nome: string } | null;
+  autor_id: string | null; criado_em: string; perfis?: { nome: string } | null; novidade?: string | null; novidade_em?: string | null;
   prestadores_recomendacoes?: { perfil_id: string; comentario: string | null; perfis?: { nome: string } | null }[];
 };
 export const TIPOS_PRESTADOR = [
@@ -217,9 +218,46 @@ export type Meta = {
 };
 export type Indicadores = {
   inadimplencia: number; resposta_ocorrencias: number | null; manutencoes_em_dia: number | null; adesao: number;
-  ocorrencias_abertas: number; ocorrencias_resolvidas_90d: number;
+  primeira_resposta_min: number | null; disponibilidade_servicos: number | null; eventos_ano: number; participacao_assembleia: number | null;
+  comissoes_ativas: number; ocorrencias_abertas: number; ocorrencias_resolvidas_90d: number;
 };
-export const NOMES_INDICADOR: Record<string, string> = {
-  inadimplencia: 'Inadimplência (% das unidades)', resposta_ocorrencias: 'Tempo médio para resolver ocorrências (dias)',
-  manutencoes_em_dia: 'Manutenções preventivas em dia (%)', adesao: 'Unidades usando o app (%)',
+/** Indicadores que o app calcula sozinho (nome e unidade de medida). */
+export const INDICADORES_AUTO: Record<string, { nome: string; unidade: string }> = {
+  inadimplencia: { nome: 'Inadimplência', unidade: '%' },
+  primeira_resposta_min: { nome: 'Tempo até a primeira resposta a uma ocorrência', unidade: 'min' },
+  resposta_ocorrencias: { nome: 'Tempo para resolver ocorrências', unidade: 'dias' },
+  manutencoes_em_dia: { nome: 'Manutenções preventivas em dia', unidade: '%' },
+  disponibilidade_servicos: { nome: 'Serviços essenciais funcionando (sem contar concessionárias, 30 dias)', unidade: '%' },
+  adesao: { nome: 'Unidades usando o app', unidade: '%' },
+  eventos_ano: { nome: 'Eventos de integração no ano', unidade: 'eventos' },
+  participacao_assembleia: { nome: 'Participação na última assembleia', unidade: '%' },
+  comissoes_ativas: { nome: 'Comissões de condôminos ativas', unidade: 'comissões' },
+};
+export const NOMES_INDICADOR: Record<string, string> = Object.fromEntries(Object.entries(INDICADORES_AUTO).map(([k, v]) => [k, v.nome]));
+
+export type Evento = {
+  id: string; organizador_id: string | null; comissao_id: string | null; tipo: 'festa' | 'encontro' | 'reuniao' | 'atividade' | 'outro';
+  titulo: string; descricao: string | null; inicio: string; local: string | null; contribuicao: string | null; pede_prato: boolean;
+  cancelado: boolean; organizador?: { nome: string } | null;
+  eventos_presencas?: { unidade_id: string; adultos: number; criancas: number; rateio: boolean; prato: string | null; perfis?: { nome: string } | null }[];
+};
+export const TIPOS_EVENTO: Record<Evento['tipo'], { nome: string; emoji: string }> = {
+  festa: { nome: 'Festa', emoji: '🎉' }, encontro: { nome: 'Encontro de moradores', emoji: '🤝' }, reuniao: { nome: 'Reunião', emoji: '📋' },
+  atividade: { nome: 'Atividade', emoji: '⚽' }, outro: { nome: 'Outro', emoji: '📅' },
+};
+
+export type Incidente = {
+  id: string; servico: string; status: 'aberto' | 'resolvido'; origem: 'concessionaria' | 'interna' | 'desconhecida';
+  protocolo: string | null; previsao: string | null; observacao: string | null; inicio: string; fim: string | null;
+  incidentes_relatos?: { perfil_id: string; detalhe: string | null }[];
+};
+export const SERVICOS: Record<string, { nome: string; emoji: string; detalhes: string[] }> = {
+  energia: { nome: 'Luz / energia', emoji: '⚡', detalhes: ['Sem luz', 'Meia fase', 'Oscilando'] },
+  agua: { nome: 'Água', emoji: '💧', detalhes: ['Sem água', 'Pouca pressão', 'Água suja'] },
+  internet: { nome: 'Internet', emoji: '🌐', detalhes: ['Sem internet', 'Muito lenta'] },
+  interfone: { nome: 'Interfone', emoji: '📞', detalhes: ['Não funciona', 'Com chiado'] },
+  portao: { nome: 'Portão', emoji: '🚪', detalhes: ['Não abre', 'Não fecha'] },
+};
+export const ORIGENS_INCIDENTE: Record<Incidente['origem'], string> = {
+  concessionaria: 'Da concessionária (CPFL, operadora…)', interna: 'Problema do condomínio', desconhecida: 'Ainda não se sabe',
 };
