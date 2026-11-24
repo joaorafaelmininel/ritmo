@@ -13,7 +13,7 @@ import { useResumo } from '@/lib/resumo';
 import { useSessao } from '@/lib/sessao';
 import { supabase } from '@/lib/supabase';
 import { espaco } from '@/lib/tema';
-import { Equipe, FUNCOES_EQUIPE, RegistroPortaria } from '@/lib/tipos';
+import { Coleta, Equipamento, Equipe, FUNCOES_EQUIPE, RegistroPortaria, STATUS_EQUIP, TIPOS_COLETA } from '@/lib/tipos';
 
 type Comunicado = { id: string; titulo: string; categoria: string; publicado_em: string; valido_ate: string | null };
 const COR = '#0B4F8A';
@@ -26,7 +26,7 @@ export default function DiaADia() {
   const { dados, recarregar } = useConsulta(async () => {
     const agora = new Date().toISOString();
     const tresDias = new Date(Date.now() - 3 * 86400000).toISOString();
-    const [eq, av, pt] = await Promise.all([
+    const [eq, av, pt, eqp, col] = await Promise.all([
       supabase.from('equipe').select('*').eq('condominio_id', condominioId).eq('ativo', true).returns<Equipe[]>(),
       supabase.from('avisos').select('id, titulo, categoria, publicado_em, valido_ate').eq('condominio_id', condominioId)
         .in('categoria', ['operacional', 'manutencao', 'seguranca'])
@@ -35,8 +35,10 @@ export default function DiaADia() {
       membro?.unidade_id
         ? supabase.from('portaria').select('*').eq('unidade_id', membro.unidade_id).eq('status', 'na_portaria').returns<RegistroPortaria[]>()
         : Promise.resolve({ data: [] as RegistroPortaria[] }),
+      supabase.from('equipamentos').select('*').eq('condominio_id', condominioId).neq('status', 'ok').returns<Equipamento[]>(),
+      supabase.from('coletas').select('*').eq('condominio_id', condominioId).returns<Coleta[]>(),
     ]);
-    return { data: { equipe: eq.data ?? [], comunicados: av.data ?? [], pendentes: pt.data ?? [] }, error: eq.error };
+    return { data: { equipe: eq.data ?? [], comunicados: av.data ?? [], pendentes: pt.data ?? [], problemas: eqp.data ?? [], coletas: col.data ?? [] }, error: eq.error };
   }, [condominioId]);
 
   const agora = (dados?.equipe ?? []).filter((e) => emServico(e));
@@ -62,6 +64,29 @@ export default function DiaADia() {
         ))}
         <Botao tipo="texto" titulo="Ver equipe e horários" aoTocar={() => router.push('/equipe')} />
       </Cartao>
+
+      {/* Equipamentos com problema */}
+      <Cartao destaque={dados?.problemas.length ? 'alerta' : undefined} aoTocar={() => router.push('/equipamentos')} rotulo="Situação dos equipamentos">
+        <Texto tamanho="subtitulo" negrito>{dados?.problemas.length ? '⚠️ Equipamentos com problema' : '✅ Equipamentos funcionando'}</Texto>
+        {dados?.problemas.map((e) => (
+          <Texto key={e.id}>• {e.nome}: {STATUS_EQUIP[e.status].nome.toLowerCase()}{e.previsao ? ` (${e.previsao})` : ''}</Texto>
+        ))}
+        {dados && !dados.problemas.length ? <Texto suave>Portões, bomba d’água, interfone e demais em funcionamento.</Texto> : null}
+      </Cartao>
+
+      {/* Coleta de lixo hoje/amanhã */}
+      {dados?.coletas.length ? (() => {
+        const hoje = new Date().getDay();
+        const h = dados.coletas.filter((x) => x.dias.includes(hoje));
+        const a = dados.coletas.filter((x) => x.dias.includes((hoje + 1) % 7));
+        return (
+          <Cartao aoTocar={() => router.push('/coleta')} rotulo="Coleta de lixo">
+            <Texto negrito>🗑️ Coleta de lixo</Texto>
+            <Texto>Hoje: {h.length ? h.map((x) => TIPOS_COLETA[x.tipo]?.nome).join(', ') : 'não tem'}{h[0]?.horario ? ` · ${h[0].horario.toLowerCase()}` : ''}</Texto>
+            <Texto suave>Amanhã: {a.length ? a.map((x) => TIPOS_COLETA[x.tipo]?.nome).join(', ') : 'não tem'}</Texto>
+          </Cartao>
+        );
+      })() : null}
 
       {/* Comunicados de serviço */}
       <Cartao>
@@ -96,6 +121,8 @@ export default function DiaADia() {
 
       <Subtitulo>Equipe e manutenção</Subtitulo>
       <View style={{ gap: espaco.s }}>
+        <ItemLista cor={COR} item={{ titulo: 'Situação dos equipamentos', detalhe: 'Portões, bomba, interfone, piscina', icone: 'pulse-outline', rota: '/equipamentos', contador: dados?.problemas.length }} />
+        <ItemLista cor={COR} item={{ titulo: 'Coleta de lixo', detalhe: 'Dias, horários e lembrete na véspera', icone: 'trash-outline', rota: '/coleta' }} />
         <ItemLista cor={COR} item={{ titulo: 'Equipe e horários', detalhe: 'Porteiros, zelador, limpeza', icone: 'time-outline', rota: '/equipe' }} />
         <ItemLista cor={COR} item={{ titulo: 'Manutenções', detalhe: 'Calendário preventivo', icone: 'construct-outline', rota: '/manutencoes', contador: eGestor ? resumo?.manutencoesVencidas : 0 }} />
         <ItemLista cor={COR} item={{ titulo: 'Projetos do plano (operacional)', icone: 'map-outline', rota: '/plano?dimensao=operacional' }} />

@@ -30,6 +30,9 @@
 | Nome de visitantes e prestadores | Controle de acesso pela portaria | Legítimo interesse (segurança) | Unidade visitada, portaria | **30 dias** (sem documento, placa ou foto) |
 | Pets (nome, foto, descrição, unidade) | Devolver pets que fogem | Consentimento (cadastro opcional, com aviso de que a unidade aparece) | Moradores | Até o dono remover |
 | Prestadores indicados (nome, telefone) | Recomendação entre vizinhos | Consentimento do prestador (confirmado por quem indica) | Moradores | Até ser removido |
+| Pedidos de ajuda (vizinho solidário) | Rede de apoio entre moradores | Consentimento (pedido voluntário) | Todos veem o pedido; **a unidade só aparece para o voluntário que aceitou** e para a gestão | 6 meses após concluído |
+| Voluntários (habilidades, disponibilidade) | Rede de apoio | Consentimento | Moradores | Até sair da lista |
+| Achados e perdidos (descrição, foto) | Devolver objetos | Legítimo interesse | Moradores | 6 meses após resolvido |
 | Equipe (primeiro nome, função, horário) | Saber quem está em serviço | Legítimo interesse / execução de contrato de trabalho | Moradores | Enquanto estiver na escala |
 | Extratos bancários | Transparência das contas | Obrigação legal (prestação de contas) | Todos **só se** a gestão confirmar que ocultou dados de moradores; senão, gestão e conselho | 5 anos |
 
@@ -42,6 +45,8 @@
 - **Voto secreto**: a tabela de votos não é legível; resultados só por função agregadora.
 - **Inadimplência agregada**: moradores veem só o total, nunca quais unidades devem.
 - **Extratos protegidos**: extratos bancários costumam listar quem pagou a taxa. Só ficam abertos a todos se a gestão marcar que ocultou esses dados; caso contrário, vão para a pasta restrita (gestão e conselho).
+- **Proteção de idosos no vizinho solidário**: a unidade de quem pede ajuda fica oculta por permissão de coluna; só o voluntário que aceitou (e a gestão) a recebe, por função própria.
+- **Prioridades e votos agregados**: ninguém vê em que projeto outra unidade votou; o ranking sai por função agregadora.
 - **Portaria mínima**: do visitante, só o nome; apagado após 30 dias.
 - **Arquivos privados** (bucket sem acesso público), links temporários de 1 hora, pastas com regras próprias (fotos de chamados só para autor e gestão; documentos restritos só para gestão/conselho).
 - **Fotos sem metadados** de localização (`exif: false`).

@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { SeletorPeriodo } from '@/components/lista';
-import { Carregando, Cartao, Linha, Subtitulo, Tela, Texto } from '@/components/ui';
+import { avisar, Botao, Carregando, Cartao, Linha, Subtitulo, Tela, Texto } from '@/components/ui';
+import { htmlResumoMes, imprimir } from '@/lib/relatorios';
 import { abrirArquivo } from '@/lib/arquivos';
 import { useConsulta } from '@/lib/consulta';
 import { dataCurta, isoData, moeda } from '@/lib/formato';
@@ -15,7 +16,7 @@ import { Lancamento } from '@/lib/tipos';
 /** Todos os lançamentos de um mês, receitas e despesas separadas. */
 export default function Mes() {
   const { c } = useTema();
-  const { condominioId } = useSessao();
+  const { condominioId, membro } = useSessao();
   const { m } = useLocalSearchParams<{ m?: string }>();
   const hoje = new Date();
   const [mes, setMes] = useState(m ? new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1) : new Date(hoje.getFullYear(), hoje.getMonth(), 1));
@@ -29,6 +30,24 @@ export default function Mes() {
   const receitas = dados?.filter((l) => l.tipo === 'receita') ?? [];
   const despesas = dados?.filter((l) => l.tipo === 'despesa') ?? [];
   const total = (l: Lancamento[]) => l.reduce((s, x) => s + Number(x.valor), 0);
+
+  async function imprimirResumo() {
+    try {
+      const [sd, ct, inad] = await Promise.all([
+        supabase.from('saldos').select('conta_id, saldo_final, competencia').eq('condominio_id', condominioId).eq('competencia', isoData(mes)),
+        supabase.from('contas_bancarias').select('id, nome').eq('condominio_id', condominioId),
+        supabase.rpc('resumo_inadimplencia', { p_condominio: condominioId }),
+      ]);
+      const i = (inad.data as { unidades_total: number; unidades_em_atraso: number; valor_em_atraso: number }[] | null)?.[0];
+      await imprimir(htmlResumoMes({
+        condominio: membro?.condominios.nome ?? '', mes, lancamentos: dados ?? [],
+        saldos: (sd.data ?? []).map((s) => ({ conta: ct.data?.find((x) => x.id === s.conta_id)?.nome ?? 'Conta', valor: Number(s.saldo_final) })),
+        inadimplencia: i ? { unidades: i.unidades_em_atraso, total: i.unidades_total, valor: Number(i.valor_em_atraso) } : null,
+      }));
+    } catch {
+      avisar('Não foi possível imprimir', 'Tente de novo.');
+    }
+  }
 
   const lista = (itens: typeof receitas) => (
     <View style={{ gap: espaco.s }}>
@@ -63,6 +82,7 @@ export default function Mes() {
               <Texto tamanho="subtitulo" negrito cor={total(receitas) - total(despesas) >= 0 ? c.sucesso : c.perigo}>{moeda(total(receitas) - total(despesas))}</Texto>
             </Linha>
           </Cartao>
+          <Botao tipo="secundario" icone="print-outline" titulo="Imprimir resumo para o mural" aoTocar={imprimirResumo} />
           <Subtitulo>Despesas ({despesas.length})</Subtitulo>
           {despesas.length ? lista(despesas) : <Texto suave>Nenhuma despesa lançada.</Texto>}
           <Subtitulo>Receitas ({receitas.length})</Subtitulo>

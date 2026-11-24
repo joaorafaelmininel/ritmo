@@ -32,6 +32,8 @@ export default function DimensaoTela() {
     comunidade: [
       { titulo: 'Avisos', detalhe: 'Recados da gestão', icone: 'megaphone-outline', rota: '/avisos', contador: dados?.naoLidos },
       { titulo: 'Pets do condomínio', detalhe: dados?.petsPerdidos ? 'Tem pet perdido! Ajude a encontrar' : 'Ache o dono do bichinho que apareceu aí', icone: 'paw-outline', rota: '/pets', contador: dados?.petsPerdidos, destaque: !!dados?.petsPerdidos },
+      { titulo: 'Vizinho solidário', detalhe: 'Peça ou ofereça ajuda: farmácia, mercado, celular', icone: 'heart-outline', rota: '/solidario' },
+      { titulo: 'Achados e perdidos', detalhe: 'Objetos encontrados nas áreas comuns', icone: 'search-outline', rota: '/achados' },
       { titulo: 'Prestadores indicados', detalhe: 'Eletricista, encanador, diarista… recomendados pelos vizinhos', icone: 'construct-outline', rota: '/prestadores?origem=indicado' },
       { titulo: 'Negócios de moradores', detalhe: 'Serviços e empresas dos vizinhos', icone: 'storefront-outline', rota: '/prestadores?origem=morador' },
       { titulo: 'Enquetes', detalhe: 'Dê sua opinião', icone: 'checkbox-outline', rota: '/enquetes' },
@@ -49,7 +51,11 @@ export default function DimensaoTela() {
     ],
     desenvolvimento: [
       { titulo: 'Calendário do ano', detalhe: 'Podas, manutenções e ações planejadas, mês a mês', icone: 'calendar-outline', rota: '/calendario', destaque: true },
+      { titulo: 'Metas e indicadores', detalhe: 'Os compromissos da gestão em números', icone: 'speedometer-outline', rota: '/metas' },
+      { titulo: 'O que fazer primeiro?', detalhe: 'Escolha até 3 projetos prioritários', icone: 'star-outline', rota: '/prioridades' },
       { titulo: 'Plano de gestão', detalhe: 'Projetos e processos nas quatro áreas', icone: 'map-outline', rota: '/plano' },
+      { titulo: 'Antes e depois', detalhe: 'Melhorias já entregues, com fotos', icone: 'images-outline', rota: '/melhorias' },
+      { titulo: 'Relatório de gestão', detalhe: 'Resumo do trimestre, em PDF para a assembleia', icone: 'document-text-outline', rota: '/relatorio' },
       { titulo: 'Manutenções preventivas', detalhe: 'O que já foi feito e o que vem por aí', icone: 'construct-outline', rota: '/manutencoes', contador: eGestor ? dados?.manutencoesVencidas : 0 },
       { titulo: 'Dar uma ideia', detalhe: 'Sugira melhorias e apoie as dos vizinhos', icone: 'bulb-outline', rota: '/sugestoes' },
       { titulo: 'Documentos', detalhe: 'Convenção, regimento e atas', icone: 'folder-open-outline', rota: '/documentos' },

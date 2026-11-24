@@ -180,3 +180,46 @@ export const CATEGORIAS_ACAO: Record<string, { nome: string; icone: string }> = 
   evento: { nome: 'Evento', icone: 'balloon-outline' },
   outro: { nome: 'Outro', icone: 'ellipsis-horizontal-circle-outline' },
 };
+
+export const TIPOS_AJUDA: Record<string, { nome: string; icone: string }> = {
+  farmacia: { nome: 'Farmácia', icone: 'medkit-outline' },
+  mercado: { nome: 'Mercado / compras', icone: 'cart-outline' },
+  reparo: { nome: 'Pequeno reparo', icone: 'hammer-outline' },
+  tecnologia: { nome: 'Celular / internet', icone: 'phone-portrait-outline' },
+  companhia: { nome: 'Companhia / conversa', icone: 'chatbubbles-outline' },
+  transporte: { nome: 'Carona / transporte', icone: 'car-outline' },
+  outro: { nome: 'Outra coisa', icone: 'help-circle-outline' },
+};
+export type PedidoAjuda = {
+  id: string; autor_id: string | null; tipo: string; descricao: string | null; quando: string | null;
+  status: 'aberto' | 'combinado' | 'concluido' | 'cancelado'; voluntario_id: string | null; criado_em: string;
+  autor?: { nome: string } | null;
+};
+
+export type Equipamento = { id: string; nome: string; local: string | null; status: 'ok' | 'atencao' | 'parado' | 'manutencao'; observacao: string | null; previsao: string | null; ordem: number; atualizado_em: string };
+export const STATUS_EQUIP: Record<Equipamento['status'], { nome: string; tipo: 'sucesso' | 'alerta' | 'perigo' | 'primaria'; icone: string }> = {
+  ok: { nome: 'Funcionando', tipo: 'sucesso', icone: 'checkmark-circle' },
+  atencao: { nome: 'Com problema', tipo: 'alerta', icone: 'warning' },
+  manutencao: { nome: 'Em manutenção', tipo: 'primaria', icone: 'construct' },
+  parado: { nome: 'Parado', tipo: 'perigo', icone: 'close-circle' },
+};
+
+export type Coleta = { id: string; tipo: string; dias: number[]; horario: string | null; local: string | null; orientacao: string | null };
+export const TIPOS_COLETA: Record<string, { nome: string; emoji: string }> = {
+  comum: { nome: 'Lixo comum', emoji: '🗑️' }, reciclavel: { nome: 'Recicláveis', emoji: '♻️' }, organico: { nome: 'Orgânico', emoji: '🍂' },
+  volumoso: { nome: 'Volumosos (móveis, entulho)', emoji: '🛋️' }, eletronico: { nome: 'Eletrônicos', emoji: '🔌' }, oleo: { nome: 'Óleo de cozinha', emoji: '🫙' },
+  vidro: { nome: 'Vidro', emoji: '🍾' },
+};
+
+export type Meta = {
+  id: string; dimensao: Dimensao; titulo: string; indicador: string | null; unidade_medida: string; valor_meta: number;
+  sentido: 'menor' | 'maior'; ativo: boolean; metas_medicoes?: { competencia: string; valor: number }[];
+};
+export type Indicadores = {
+  inadimplencia: number; resposta_ocorrencias: number | null; manutencoes_em_dia: number | null; adesao: number;
+  ocorrencias_abertas: number; ocorrencias_resolvidas_90d: number;
+};
+export const NOMES_INDICADOR: Record<string, string> = {
+  inadimplencia: 'Inadimplência (% das unidades)', resposta_ocorrencias: 'Tempo médio para resolver ocorrências (dias)',
+  manutencoes_em_dia: 'Manutenções preventivas em dia (%)', adesao: 'Unidades usando o app (%)',
+};

@@ -12,6 +12,7 @@ import { mensagemErro, supabase } from '@/lib/supabase';
 import { espaco, useTema } from '@/lib/tema';
 import { ESPECIES, Pet } from '@/lib/tipos';
 
+type Fuga = { id: string; inicio: string; fim: string | null; onde_encontrado: string | null };
 type Avistamento = { id: string; local: string | null; criado_em: string; perfis: { nome: string } | null };
 
 export default function VerPet() {
@@ -21,23 +22,28 @@ export default function VerPet() {
   const confirmar = useConfirmar();
   const [local, setLocal] = useState('');
   const [encontrando, setEncontrando] = useState(false);
+  const [voltou, setVoltou] = useState(false);
+  const [ondeAchado, setOndeAchado] = useState('');
 
   const { dados, recarregar } = useConsulta(async () => {
-    const [p, a] = await Promise.all([
+    const [p, a, f] = await Promise.all([
       supabase.from('pets').select('*, unidades(bloco, numero)').eq('id', id).single<Pet>(),
       supabase.from('pets_avistamentos').select('id, local, criado_em, perfis(nome)').eq('pet_id', id).order('criado_em', { ascending: false }).limit(10).returns<Avistamento[]>(),
+      supabase.from('pets_fugas').select('*').eq('pet_id', id).order('inicio', { ascending: false }).returns<Fuga[]>(),
     ]);
-    return { data: p.data ? { pet: p.data, vistos: a.data ?? [] } : null, error: p.error };
+    return { data: p.data ? { pet: p.data, vistos: a.data ?? [], fugas: f.data ?? [] } : null, error: p.error };
   }, [id]);
 
   if (!dados) return <Carregando />;
-  const { pet, vistos } = dados;
+  const { pet, vistos, fugas } = dados;
   const meu = pet.unidade_id === membro?.unidade_id;
 
   async function marcarPerdido(perdido: boolean) {
     const { error } = await supabase.from('pets').update({ perdido }).eq('id', id);
     if (error) return avisar('Não foi possível', mensagemErro(error));
     if (perdido) notificar('pet_perdido', id);
+    else if (ondeAchado.trim() && fugas[0]) await supabase.from('pets_fugas').update({ onde_encontrado: ondeAchado.trim() }).eq('id', fugas[0].id);
+    setVoltou(false); setOndeAchado('');
     recarregar();
   }
 
@@ -81,7 +87,14 @@ export default function VerPet() {
 
       {meu ? (
         pet.perdido ? (
-          <Botao icone="happy-outline" titulo={`${pet.nome} voltou para casa`} aoTocar={() => marcarPerdido(false)} />
+          voltou ? (
+            <Cartao>
+              <Campo rotulo="Onde ele foi encontrado?" ajuda="Opcional. Ajuda a saber por onde ele costuma escapar." valor={ondeAchado} aoMudar={setOndeAchado} />
+              <Botao icone="happy-outline" titulo="Confirmar: voltou para casa" aoTocar={() => marcarPerdido(false)} />
+            </Cartao>
+          ) : (
+            <Botao icone="happy-outline" titulo={`${pet.nome} voltou para casa`} aoTocar={() => setVoltou(true)} />
+          )
         ) : (
           <Botao tipo="perigo" icone="alert-circle-outline" titulo={`${pet.nome} fugiu — avisar os vizinhos`} aoTocar={() => confirmar('Avisar o condomínio?', `Todos os moradores receberão um aviso de que ${pet.nome} fugiu.`, () => marcarPerdido(true), 'Sim, avisar')} />
         )
@@ -96,6 +109,24 @@ export default function VerPet() {
               {v.local ? <Texto>📍 {v.local}</Texto> : null}
             </Cartao>
           ))}
+        </>
+      ) : null}
+
+      {fugas.length ? (
+        <>
+          <Subtitulo>Histórico de fugas ({fugas.length})</Subtitulo>
+          {fugas.slice(0, 8).map((f) => {
+            const horas = f.fim ? Math.max(1, Math.round((new Date(f.fim).getTime() - new Date(f.inicio).getTime()) / 3600000)) : null;
+            return (
+              <Texto key={f.id}>
+                • {new Date(f.inicio).toLocaleDateString('pt-BR')}{horas ? ` — voltou em ${horas < 24 ? `${horas}h` : `${Math.round(horas / 24)} dia(s)`}` : ' — ainda sumido'}
+                {f.onde_encontrado ? ` · achado em: ${f.onde_encontrado}` : ''}
+              </Texto>
+            );
+          })}
+          {meu && fugas.length >= 2 ? (
+            <Texto tamanho="pequeno" suave>Dica: veja se há um ponto do muro ou portão por onde ele costuma escapar.</Texto>
+          ) : null}
         </>
       ) : null}
 

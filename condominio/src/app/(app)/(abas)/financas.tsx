@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
+import { BarrasMensais, ParaOndeVai } from '@/components/graficos';
 import { ItemLista } from '@/components/lista';
 import { Botao, Carregando, Cartao, Erro, Linha, Progresso, Subtitulo, Tela, Texto } from '@/components/ui';
 import { useConsulta } from '@/lib/consulta';
@@ -10,7 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { useTema } from '@/lib/tema';
 import { ContaBancaria, DOCS_FINANCEIROS, Saldo } from '@/lib/tipos';
 
-type Mov = { tipo: 'receita' | 'despesa'; valor: number; data: string };
+type Mov = { tipo: 'receita' | 'despesa'; valor: number; data: string; categoria: string };
 
 // Painel de transparência: a saúde financeira do condomínio em uma tela,
 // e todos os documentos organizados por classificação logo abaixo.
@@ -25,7 +26,7 @@ export default function Financas() {
     const [contas, saldos, movs, inad, orc] = await Promise.all([
       supabase.from('contas_bancarias').select('*').eq('condominio_id', condominioId).eq('ativa', true).order('ordem').returns<ContaBancaria[]>(),
       supabase.from('saldos').select('*').eq('condominio_id', condominioId).order('competencia', { ascending: false }).limit(60).returns<Saldo[]>(),
-      supabase.from('lancamentos').select('tipo, valor, data').eq('condominio_id', condominioId).gte('data', inicio12).returns<Mov[]>(),
+      supabase.from('lancamentos').select('tipo, valor, data, categoria').eq('condominio_id', condominioId).gte('data', inicio12).returns<Mov[]>(),
       supabase.rpc('resumo_inadimplencia', { p_condominio: condominioId }),
       supabase.from('orcamento').select('valor_previsto').eq('condominio_id', condominioId).eq('ano', ano).eq('tipo', 'despesa'),
     ]);
@@ -60,6 +61,17 @@ export default function Financas() {
     const l = dados.movs.filter((m) => m.data.startsWith(chave));
     return { d, chave, resultado: soma(l, 'receita') - soma(l, 'despesa'), vazio: l.length === 0 };
   });
+
+  const doze = Array.from({ length: 12 }, (_, i) => new Date(ano, hoje.getMonth() - 11 + i, 1)).map((d) => {
+    const l = dados.movs.filter((m) => m.data.startsWith(isoData(d).slice(0, 7)));
+    return { d, entrou: soma(l, 'receita'), saiu: soma(l, 'despesa') };
+  });
+  const despesas12 = dados.movs.filter((m) => m.tipo === 'despesa');
+  const categorias12 = Object.entries(despesas12.reduce<Record<string, number>>((a, m) => { a[m.categoria] = (a[m.categoria] ?? 0) + Number(m.valor); return a; }, {}))
+    .map(([nome, valor]) => ({ nome, valor }));
+  const mesesComDados = new Set(despesas12.map((m) => m.data.slice(0, 7))).size;
+  const custoUnidade = dados.inad?.unidades_total && mesesComDados
+    ? despesas12.reduce((s, m) => s + Number(m.valor), 0) / mesesComDados / dados.inad.unidades_total : 0;
 
   const pctInad = dados.inad?.unidades_total ? Math.round((dados.inad.unidades_em_atraso / dados.inad.unidades_total) * 100) : 0;
   const pctOrc = dados.previstoAno ? Math.round((despesasAno / dados.previstoAno) * 100) : null;
@@ -129,6 +141,20 @@ export default function Financas() {
       ) : null}
 
       <Cartao>
+        <Texto negrito>Últimos 12 meses</Texto>
+        <BarrasMensais meses={doze} />
+      </Cartao>
+
+      <Cartao>
+        <Texto tamanho="subtitulo" negrito>Para onde vai a sua taxa</Texto>
+        <Texto suave>De cada R$ 100,00 gastos pelo condomínio nos últimos 12 meses:</Texto>
+        <ParaOndeVai categorias={categorias12} />
+        {custoUnidade ? (
+          <Texto tamanho="pequeno" suave>Em média, o condomínio custa {moeda(custoUnidade)} por mês para cada unidade.</Texto>
+        ) : null}
+      </Cartao>
+
+      <Cartao>
         <Texto negrito>Resultado mês a mês</Texto>
         {meses.map((m) => (
           <Linha key={m.chave} style={{ justifyContent: 'space-between', minHeight: 44 }}>
@@ -141,7 +167,7 @@ export default function Financas() {
       </Cartao>
 
       <Subtitulo>Movimentação</Subtitulo>
-      <ItemLista item={{ titulo: 'Receitas e despesas do mês', detalhe: 'Cada lançamento, mês a mês', icone: 'swap-vertical-outline', rota: '/financas/mes' }} />
+      <ItemLista item={{ titulo: 'Receitas e despesas do mês', detalhe: 'Cada lançamento, mês a mês — e o resumo para imprimir', icone: 'swap-vertical-outline', rota: '/financas/mes' }} />
       <ItemLista item={{ titulo: 'Despesas por categoria', detalhe: 'Água, energia, portaria, manutenção…', icone: 'pie-chart-outline', rota: '/financas/categorias?tipo=despesa' }} />
       <ItemLista item={{ titulo: 'Receitas por categoria', detalhe: 'Taxas, multas, aluguel de espaços…', icone: 'trending-up-outline', rota: '/financas/categorias?tipo=receita' }} />
       <ItemLista item={{ titulo: 'Notas fiscais e comprovantes', detalhe: 'O documento de cada pagamento', icone: 'receipt-outline', rota: '/financas/notas' }} />

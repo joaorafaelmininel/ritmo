@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AlertaPet } from '@/components/alertaPet';
 import { RespostaPortaria } from '@/components/respostaPortaria';
 import { Botao, Cartao, Selo, Tela, Texto } from '@/components/ui';
 import { quando, nomeUnidade, saudacao } from '@/lib/formato';
@@ -74,6 +75,7 @@ export default function Inicio() {
 
         {/* Urgente: alguém na portaria esperando autorização */}
         {dados?.portaria.map((r) => <RespostaPortaria key={r.id} r={r} aoResponder={recarregar} />)}
+        {dados?.petsPerdidosLista.map((p) => <AlertaPet key={p.id} pet={p} meu={p.unidade_id === membro?.unidade_id} />)}
 
         {/* As quatro dimensões do plano de gestão */}
         <View style={{ gap: espaco.s }}>

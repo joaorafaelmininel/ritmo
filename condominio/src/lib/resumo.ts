@@ -2,7 +2,7 @@ import { useConsulta } from './consulta';
 import { isoData } from './formato';
 import { useSessao } from './sessao';
 import { supabase } from './supabase';
-import type { RegistroPortaria } from './tipos';
+import type { Pet, RegistroPortaria } from './tipos';
 
 export type AvisoResumo = { id: string; titulo: string; importante: boolean; publicado_em: string; lido: boolean };
 
@@ -16,6 +16,7 @@ export type Resumo = {
   manutencoesVencidas: number;
   portaria: RegistroPortaria[];
   petsPerdidos: number;
+  petsPerdidosLista: Pet[];
 };
 
 /** Números que aparecem como "bolinhas" nos botões (novidades e pendências). */
@@ -41,7 +42,7 @@ export function useResumo() {
       unidadeId
         ? supabase.from('portaria').select('*').eq('unidade_id', unidadeId).eq('status', 'na_portaria').returns<RegistroPortaria[]>()
         : Promise.resolve({ data: [] as RegistroPortaria[] }),
-      contar(supabase.from('pets').select('id', { count: 'exact', head: true }).eq('condominio_id', condominioId).eq('perdido', true).eq('ativo', true)),
+      supabase.from('pets').select('*, unidades(bloco, numero)').eq('condominio_id', condominioId).eq('perdido', true).eq('ativo', true).returns<Pet[]>(),
     ]);
     const lidosSet = new Set((lidos.data ?? []).map((l) => l.aviso_id));
     const lista = (avisos.data ?? []).map((a) => ({ ...a, lido: lidosSet.has(a.id) }));
@@ -55,7 +56,8 @@ export function useResumo() {
         ocorrenciasAbertas: ocorrencias,
         manutencoesVencidas: manutencoes,
         portaria: portaria.data ?? [],
-        petsPerdidos: pets,
+        petsPerdidos: (pets.data ?? []).length,
+        petsPerdidosLista: pets.data ?? [],
       },
       error: avisos.error,
     };

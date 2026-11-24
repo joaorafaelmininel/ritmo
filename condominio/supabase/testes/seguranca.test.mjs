@@ -157,6 +157,34 @@ log('A conclui poda 2026', await as(A, `insert into acoes_execucoes (acao_id, an
 log('B conclui ação (falha)', await as(B, `insert into acoes_execucoes (acao_id, ano) values ($1, 2027)`, [acao.id]));
 log('B vê calendário', await as(B, `select count(*) from acoes_execucoes`), (v) => n(v) === 1);
 log('B envia foto de pet', await as(B, `insert into storage.objects (bucket_id,name,owner_id) values ('arquivos',$1,$2) returning name`, [`${c}/pets/thor.jpg`, B]));
+// --- Vizinho solidário ---
+const [aj] = await as(B, `insert into ajuda_pedidos (condominio_id,unidade_id,tipo,descricao) values ($1,$2,'farmacia','Buscar remédio') returning id`, [c, ub]);
+log('B pede ajuda', aj ? [aj] : aj, (v) => !!v[0]?.id);
+log('C lê unidade do pedido (falha)', await as(C, `select unidade_id from ajuda_pedidos`));
+log('C aceita sem ser voluntário (ignorado)', await as(C, `update ajuda_pedidos set status='combinado' where id=$1 returning id`, [aj.id]), (v) => v.length === 0);
+log('C vira voluntário', await as(C, `insert into voluntarios (condominio_id, habilidades) values ($1, '{farmacia}') returning 1`, [c]));
+log('C aceita pedido', await as(C, `update ajuda_pedidos set status='combinado' where id=$1 returning voluntario_id`, [aj.id]), (v) => v[0].voluntario_id === C);
+log('C vê contato após aceitar', await as(C, `select * from contato_ajuda($1)`, [aj.id]), (v) => v[0]?.unidade_pedido != null);
+log('A (gestão) vê contato', await as(A, `select * from contato_ajuda($1)`, [aj.id]), (v) => v.length === 1);
+// --- Achados ---
+log('B publica achado', await as(B, `insert into achados (condominio_id,titulo,local) values ($1,'Chave com chaveiro azul','Piscina') returning status`, [c]));
+// --- Fugas ---
+log('Histórico de fuga criado', await as(B, `select count(*) from pets_fugas`), (v) => n(v) === 1);
+log('B: pet voltou', await as(B, `update pets set perdido=false where id=$1 returning perdido`, [pet.id]));
+log('Fuga encerrada', await as(B, `select fim is not null f from pets_fugas`), (v) => v[0].f);
+// --- Equipamentos e coleta ---
+log('A modelos padrão', await as(A, `select (select count(*) from equipamentos) e, (select count(*) from coletas) c, (select count(*) from metas) m`), (v) => Number(v[0].e) === 8 && Number(v[0].c) === 2 && Number(v[0].m) === 4);
+log('C (portaria) atualiza equipamento', await as(C, `update equipamentos set status='manutencao', previsao='sexta' where nome='Bomba d''água' returning status`), (v) => v[0]?.status === 'manutencao');
+log('B atualiza equipamento (ignorado)', await as(B, `update equipamentos set status='ok' returning id`), (v) => v.length === 0);
+// --- Indicadores, prioridades ---
+log('B vê indicadores', await as(B, `select indicadores($1) i`, [c]), (v) => v[0].i.adesao > 0);
+const projs = await as(A, `select id from projetos limit 4`);
+for (const p of projs.slice(0, 3)) await as(B, `insert into projetos_prioridades (projeto_id, unidade_id) values ($1,$2)`, [p.id, ub]);
+log('B 4ª prioridade (falha)', await as(B, `insert into projetos_prioridades (projeto_id, unidade_id) values ($1,$2)`, [projs[3].id, ub]));
+log('C não vê votos de B', await as(C, `select count(*) from projetos_prioridades`), (v) => n(v) === 0);
+log('Ranking agregado', await as(C, `select sum(votos) s from ranking_prioridades($1)`, [c]), (v) => Number(v[0].s) === 3);
+log('Projeto concluído ganha data', await as(A, `update projetos set status='concluido' where id=$1 returning concluido_em is not null d, progresso`, [projs[0].id]), (v) => v[0].d && v[0].progresso === 100);
+log('Resumo do período (morador)', await as(B, `select resumo_periodo($1, current_date - 90, current_date) r`, [c]), (v) => v[0].r.ocorrencias_registradas >= 1);
 log('anon vê avisos', await as('', `select count(*) from avisos`), (v) => n(v) === 0);
 console.log(falhas ? `\n${falhas} verificação(ões) falharam` : '\nTodas as verificações passaram');
 process.exit(falhas ? 1 : 0);

@@ -12,7 +12,7 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-type Pedido = { tipo: 'aviso' | 'encomenda' | 'reserva' | 'chamado' | 'portaria' | 'pet_perdido' | 'pet_visto'; id: string };
+type Pedido = { tipo: 'aviso' | 'encomenda' | 'reserva' | 'chamado' | 'portaria' | 'pet_perdido' | 'pet_visto' | 'ajuda' | 'ajuda_aceita'; id: string };
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -112,6 +112,24 @@ Deno.serve(async (req) => {
     titulo = `Encontraram ${pet.nome}!`;
     corpo = av.local ? `Visto em: ${av.local}` : 'Um vizinho viu seu pet. Toque para ver.';
     rota = `/pets/${pet.id}`;
+  } else if (tipo === 'ajuda' || tipo === 'ajuda_aceita') {
+    const { data: aj } = await usuario.from('ajuda_pedidos').select('condominio_id, autor_id, voluntario_id, tipo, status').eq('id', id).single();
+    if (!aj) return json({ erro: 'Pedido não encontrado.' }, 404);
+    const { data: { user } } = await usuario.auth.getUser();
+    condominio = aj.condominio_id;
+    if (tipo === 'ajuda') {
+      if (aj.autor_id !== user?.id) return json({ erro: 'Sem permissão.' }, 403);
+      const { data } = await admin.from('voluntarios').select('perfil_id').eq('condominio_id', condominio).eq('ativo', true);
+      destinatarios = (data ?? []).map((v) => v.perfil_id).filter((p) => p !== user?.id);
+      titulo = 'Um vizinho precisa de ajuda';
+      corpo = 'Toque para ver o pedido. Pode ser rapidinho!';
+    } else {
+      if (aj.voluntario_id !== user?.id || aj.status !== 'combinado') return json({ erro: 'Sem permissão.' }, 403);
+      destinatarios = aj.autor_id ? [aj.autor_id] : [];
+      titulo = 'Um vizinho vai te ajudar!';
+      corpo = 'Toque para ver quem é.';
+    }
+    rota = '/solidario';
   } else {
     return json({ erro: 'Tipo inválido.' }, 400);
   }

@@ -1,7 +1,10 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { View } from 'react-native';
 
 import { avisar, BotaoOuvir, Botao, Campo, Carregando, Cartao, Linha, Opcoes, Progresso, Selo, Subtitulo, Tela, Texto, useConfirmar } from '@/components/ui';
+import { FotoPrivada } from '@/components/fotoPrivada';
+import { enviarArquivo, escolherFoto } from '@/lib/arquivos';
 import { useConsulta } from '@/lib/consulta';
 import { dataCurta, moeda, quando } from '@/lib/formato';
 import { useSessao } from '@/lib/sessao';
@@ -12,13 +15,13 @@ type Atualizacao = { id: string; texto: string; criado_em: string; perfis: { nom
 
 export default function VerProjeto() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { eGestor } = useSessao();
+  const { eGestor, condominioId } = useSessao();
   const confirmar = useConfirmar();
   const [texto, setTexto] = useState('');
 
   const { dados, recarregar } = useConsulta(async () => {
     const [p, a] = await Promise.all([
-      supabase.from('projetos').select('*').eq('id', id).single<Projeto>(),
+      supabase.from('projetos').select('*').eq('id', id).single<Projeto & { foto_antes: string | null; foto_depois: string | null }>(),
       supabase.from('projetos_atualizacoes').select('id, texto, criado_em, perfis(nome)').eq('projeto_id', id).order('criado_em', { ascending: false }).returns<Atualizacao[]>(),
     ]);
     return { data: p.data ? { projeto: p.data, historico: a.data ?? [] } : null, error: p.error };
@@ -64,6 +67,30 @@ export default function VerProjeto() {
         {p.prazo ? <Texto>Prazo: {dataCurta(p.prazo)}</Texto> : null}
         {p.orcamento ? <Texto>Orçamento previsto: {moeda(p.orcamento)}</Texto> : null}
       </Cartao>
+
+      {p.foto_antes || p.foto_depois || eGestor ? (
+        <>
+          <Subtitulo>Antes e depois</Subtitulo>
+          <Linha style={{ flexWrap: 'nowrap' }}>
+            {(['foto_antes', 'foto_depois'] as const).map((campo) => (
+              <View key={campo} style={{ flex: 1, gap: 4 }}>
+                <Texto tamanho="pequeno" negrito>{campo === 'foto_antes' ? 'ANTES' : 'DEPOIS'}</Texto>
+                <FotoPrivada caminho={p[campo]} emoji="📷" tamanho={140} style={{ width: '100%' }} />
+                {eGestor ? (
+                  <Botao tipo="texto" icone="camera-outline" titulo={p[campo] ? 'Trocar' : 'Adicionar'} aoTocar={async () => {
+                    const f = await escolherFoto('galeria');
+                    if (!f) return;
+                    try {
+                      const caminho = await enviarArquivo(condominioId, 'melhorias', f.uri);
+                      await atualizar({ [campo]: caminho } as Partial<Projeto>);
+                    } catch (e) { avisar('Não foi possível enviar', mensagemErro(e)); }
+                  }} />
+                ) : null}
+              </View>
+            ))}
+          </Linha>
+        </>
+      ) : null}
 
       {eGestor ? (
         <>
